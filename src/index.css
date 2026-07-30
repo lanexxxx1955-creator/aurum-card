@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 38 18% 4%;
+    --foreground: 43 30% 92%;
+    --card: 40 14% 7%;
+    --card-foreground: 43 30% 92%;
+    --popover: 40 14% 7%;
+    --popover-foreground: 43 30% 92%;
+    --primary: 43 55% 52%;
+    --primary-foreground: 40 30% 6%;
+    --secondary: 40 10% 14%;
+    --secondary-foreground: 43 30% 92%;
+    --muted: 40 8% 16%;
+    --muted-foreground: 42 12% 58%;
+    --accent: 43 55% 52%;
+    --accent-foreground: 40 30% 6%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 43 25% 22%;
+    --input: 43 20% 20%;
+    --ring: 43 55% 52%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(120% 90% at 50% -10%, rgba(212, 175, 55, 0.10), transparent 55%),
+      radial-gradient(100% 70% at 50% 115%, rgba(212, 175, 55, 0.06), transparent 60%);
+    background-attachment: fixed;
+  }
+  .font-display {
+    font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  }
+}
+
+/* ---------- Luxury gold utilities ---------- */
+
+.gold-text {
+  background: linear-gradient(100deg, #8a6a1f 0%, #d4af37 30%, #f6e7b2 50%, #d4af37 70%, #8a6a1f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gold-line {
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.7), transparent);
+  height: 1px;
+}
+
+.gold-frame {
+  position: relative;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: linear-gradient(160deg, rgba(24, 20, 12, 0.9), rgba(12, 10, 6, 0.95));
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(246, 231, 178, 0.08);
+}
+
+.gold-frame::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.14);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-gold {
+  background: linear-gradient(100deg, #a8832a, #d4af37 45%, #f0dc9a 55%, #d4af37 65%, #a8832a);
+  color: #17120a;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 30px -10px rgba(212, 175, 55, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-gold:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 14px 34px -10px rgba(212, 175, 55, 0.65);
+}
+.btn-gold:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-ghost-gold {
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: #e7d9ac;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost-gold:hover {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.7);
+}
+
+.lux-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f0e8d2;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.lux-input::placeholder {
+  color: rgba(231, 217, 172, 0.3);
+}
+.lux-input:focus {
+  outline: none;
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.65rem;
+  color: rgba(212, 175, 55, 0.75);
+}
+
+/* Photo / video ring */
+.ring-gold {
+  border-radius: 9999px;
+  padding: 3px;
+  background: conic-gradient(from 210deg, #6b511a, #d4af37, #f6e7b2, #d4af37, #6b511a);
+  box-shadow: 0 0 40px -8px rgba(212, 175, 55, 0.45);
+}
+.ring-gold > * {
+  border-radius: 9999px;
+}
+
+/* Countdown ring animation */
+.ring-progress {
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+/* Subtle shimmering divider */
+.shimmer {
+  background: linear-gradient(100deg, rgba(212,175,55,0) 20%, rgba(246,231,178,0.7) 50%, rgba(212,175,55,0) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 3.5s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Rec dot pulse */
+@keyframes recpulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+.rec-dot {
+  animation: recpulse 1s ease-in-out infinite;
+}
+
+/* Fade-up entrance */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hide scrollbars inside horizontal lists */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
