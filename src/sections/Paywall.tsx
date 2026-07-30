@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import type { LangCode } from "@/lib/types";
-import { payWithStars, shareViaTelegram } from "@/lib/telegram";
+import { payWithInvoice, shareViaTelegram, tgUserId } from "@/lib/telegram";
+import { createProInvoiceLink } from "@/lib/botapi";
+import { PAYMENT_PROVIDER_TOKEN } from "@/lib/config";
 
 function PlanColumn({
   title,
@@ -43,17 +45,31 @@ export function Paywall({
   onClose: () => void;
   onActivate: () => void;
 }) {
-  const [state, setState] = useState<"idle" | "paying" | "done">("idle");
+  const [state, setState] = useState<"idle" | "paying" | "done" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const livePayments = Boolean(PAYMENT_PROVIDER_TOKEN) && Boolean(tgUserId());
 
   const buy = async () => {
     setState("paying");
-    // In production: request invoice link from your bot backend and pass it here.
-    const result = await payWithStars(undefined);
-    if (result === "paid" || result === "demo") {
-      setState("done");
-      setTimeout(onActivate, 900);
-    } else {
-      setState("idle");
+    setErrorMsg("");
+    try {
+      let result: "paid" | "demo" | "cancelled";
+      if (livePayments) {
+        const invoiceUrl = await createProInvoiceLink(tgUserId()!, PAYMENT_PROVIDER_TOKEN);
+        result = await payWithInvoice(invoiceUrl);
+      } else {
+        result = await payWithInvoice(undefined); // demo simulation
+      }
+      if (result === "paid" || result === "demo") {
+        setState("done");
+        setTimeout(onActivate, 900);
+      } else {
+        setState("idle");
+      }
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Payment error");
+      setState("error");
     }
   };
 
@@ -80,10 +96,16 @@ export function Paywall({
           />
         </div>
 
-        <button onClick={buy} disabled={state !== "idle"} className="btn-gold mb-2 w-full rounded-xl px-5 py-3.5 text-sm uppercase tracking-wider disabled:opacity-50">
+        <button
+          onClick={buy}
+          disabled={state === "paying" || state === "done"}
+          className="btn-gold mb-2 w-full rounded-xl px-5 py-3.5 text-sm uppercase tracking-wider disabled:opacity-50"
+        >
           {state === "done" ? `✓ ${t(lang, "proActivated")}` : state === "paying" ? "…" : t(lang, "buyPro")}
         </button>
-        <p className="mb-5 text-center text-[10px] text-[#8a7f5e]">{t(lang, "demoPayNote")}</p>
+
+        {state === "error" && <p className="mb-2 text-center text-xs text-red-400">{errorMsg}</p>}
+        {!livePayments && <p className="mb-5 text-center text-[10px] text-[#8a7f5e]">{t(lang, "demoPayNote")}</p>}
 
         <div className="mb-5 rounded-2xl border border-[#d4af37]/20 bg-white/[0.02] p-4 text-center">
           <div className="mb-1 font-display text-lg text-[#e7d9ac]">{t(lang, "refTitle")}</div>

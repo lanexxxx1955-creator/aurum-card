@@ -11,8 +11,10 @@ function fromBase64Url(s: string): string {
 }
 
 export function encodeCard(p: Profile): string {
-  const { name, tg, phone, company, field, position, lang, photo, hasVideo } = p;
-  return toBase64Url(JSON.stringify({ name, tg, phone, company, field, position, lang, photo, hasVideo }));
+  const { name, tg, phone, company, field, position, lang, photo, hasVideo, videoFileId } = p;
+  return toBase64Url(
+    JSON.stringify({ name, tg, phone, company, field, position, lang, photo, hasVideo, videoFileId }),
+  );
 }
 
 export function decodeCard(hash: string): Profile | null {

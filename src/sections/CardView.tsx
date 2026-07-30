@@ -4,7 +4,11 @@ import type { Profile } from "@/lib/types";
 import { Screen, Brand, GoldButton, GhostButton } from "@/components/Lux";
 import { buildCardUrl, downloadVCard, drawQr } from "@/lib/share";
 import { loadVideo } from "@/lib/idb";
-import { haptic, openLink, shareViaTelegram } from "@/lib/telegram";
+import { getTelegramFileUrl, uploadGreetingVideo, BotApiError } from "@/lib/botapi";
+import { BOT_USERNAME } from "@/lib/config";
+import { haptic, openLink, shareViaTelegram, tgUserId } from "@/lib/telegram";
+
+type CloudStatus = "idle" | "uploading" | "cloud" | "need-start" | "error";
 
 export function CardView({
   profile,
@@ -12,26 +16,63 @@ export function CardView({
   onEdit,
   onOpenPaywall,
   onCreateOwn,
+  onProfileChange,
 }: {
   profile: Profile;
   mode: "own" | "shared";
   onEdit?: () => void;
   onOpenPaywall?: () => void;
   onCreateOwn?: () => void;
+  onProfileChange?: (p: Profile) => void;
 }) {
   const lang = profile.lang;
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [cloud, setCloud] = useState<CloudStatus>(profile.videoFileId ? "cloud" : "idle");
   const qrRef = useRef<HTMLCanvasElement>(null);
+  const uploadStarted = useRef(false);
 
   const cardUrl = buildCardUrl(profile);
 
+  /* Own card: play the local recording; push it to Telegram cloud once */
   useEffect(() => {
-    if (mode === "own" && profile.hasVideo) {
-      loadVideo().then((b) => b && setVideoUrl(URL.createObjectURL(b)));
-    }
+    if (mode !== "own" || !profile.hasVideo) return;
+    loadVideo().then((b) => b && setVideoUrl((u) => u ?? URL.createObjectURL(b)));
   }, [mode, profile.hasVideo]);
+
+  useEffect(() => {
+    if (mode !== "own" || !profile.hasVideo || profile.videoFileId || uploadStarted.current) return;
+    const uid = tgUserId();
+    if (!uid) return; // plain browser preview — cloud upload needs Telegram
+    uploadStarted.current = true;
+    setCloud("uploading");
+    (async () => {
+      try {
+        const blob = await loadVideo();
+        if (!blob) throw new Error("no local video");
+        const fileId = await uploadGreetingVideo(uid, blob);
+        onProfileChange?.({ ...profile, videoFileId: fileId });
+        setCloud("cloud");
+      } catch (e) {
+        if (e instanceof BotApiError && (e.code === 403 || /initiate|blocked/i.test(e.message))) {
+          setCloud("need-start");
+        } else {
+          setCloud("error");
+        }
+        uploadStarted.current = false;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, profile.hasVideo, profile.videoFileId]);
+
+  /* Shared card: fetch the greeting video from Telegram cloud by file_id */
+  useEffect(() => {
+    if (mode !== "shared" || !profile.videoFileId) return;
+    getTelegramFileUrl(profile.videoFileId)
+      .then(setVideoUrl)
+      .catch(() => setVideoUrl(null));
+  }, [mode, profile.videoFileId]);
 
   useEffect(() => {
     if (showQr && qrRef.current) drawQr(qrRef.current, cardUrl);
@@ -66,18 +107,20 @@ export function CardView({
           )}
 
           {/* Photo / video circle */}
-          <div className="ring-gold mx-auto mb-5 h-40 w-40 overflow-hidden">
+          <div className="ring-gold relative mx-auto mb-5 h-40 w-40 overflow-hidden">
             {media}
+            {videoUrl && !showVideo && (
+              <button
+                onClick={() => setShowVideo(true)}
+                className="absolute inset-0 flex items-center justify-center bg-black/35 transition-colors hover:bg-black/25"
+                aria-label={t(lang, "recordVideo")}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#d4af37] pl-1 text-xl text-[#17120a] shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                  ▶
+                </span>
+              </button>
+            )}
           </div>
-
-          {videoUrl && !showVideo && (
-            <button
-              onClick={() => setShowVideo(true)}
-              className="btn-ghost-gold mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs"
-            >
-              ▶ {t(lang, "recordVideo")}
-            </button>
-          )}
 
           <h1 className="font-display text-3xl font-semibold leading-tight text-[#f6e7b2]">{profile.name}</h1>
 
@@ -124,6 +167,30 @@ export function CardView({
           )}
         </div>
 
+        {/* Cloud status (own card, after recording) */}
+        {mode === "own" && profile.hasVideo && cloud !== "idle" && (
+          <p className="mb-4 text-center text-[11px] leading-relaxed text-[#8a7f5e]">
+            {cloud === "uploading" && "☁️ Загружаем видео в облако Telegram…"}
+            {cloud === "cloud" && "✓ Видео в облаке Telegram — получатели увидят его в визитке"}
+            {cloud === "error" && "⚠ Не удалось загрузить видео в облако. Попробуем ещё раз при следующем открытии."}
+            {cloud === "need-start" && (
+              <>
+                ⚠ Чтобы видео попало в облако, откройте чат с ботом и нажмите Start:{" "}
+                <a
+                  href={`https://t.me/${BOT_USERNAME}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openLink(`https://t.me/${BOT_USERNAME}?start=cloud`);
+                  }}
+                  className="text-[#d4af37] underline"
+                >
+                  @{BOT_USERNAME}
+                </a>
+              </>
+            )}
+          </p>
+        )}
+
         {/* Actions */}
         {mode === "own" ? (
           <div className="space-y-3">
@@ -132,14 +199,11 @@ export function CardView({
               <GhostButton onClick={onEdit}>{t(lang, "editCard")}</GhostButton>
               {!profile.pro && <GhostButton onClick={onOpenPaywall}>✦ {t(lang, "proTitle")}</GhostButton>}
             </div>
-            {profile.hasVideo && !profile.pro && (
-              <p className="text-center text-[11px] leading-relaxed text-[#8a7f5e]">{t(lang, "videoNotShared")}</p>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
             <GoldButton onClick={onCreateOwn}>{t(lang, "createOwn")}</GoldButton>
-            {profile.hasVideo && (
+            {profile.hasVideo && !profile.videoFileId && (
               <p className="text-center text-[11px] leading-relaxed text-[#8a7f5e]">{t(lang, "videoNotShared")}</p>
             )}
           </div>

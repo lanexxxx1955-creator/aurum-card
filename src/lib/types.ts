@@ -17,7 +17,9 @@ export interface Profile {
   lang: LangCode;
   photo?: string; // compressed dataURL
   hasVideo?: boolean;
+  videoFileId?: string; // Telegram cloud file_id of the greeting video
   pro?: boolean;
+  proUntil?: number; // PRO subscription expiry timestamp (ms)
   createdAt?: number;
 }
 

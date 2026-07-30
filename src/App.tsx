@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LangCode, Profile, Step } from "@/lib/types";
 import { decodeCard, loadProfile, saveProfile } from "@/lib/share";
 import { initTelegram, tgUserDefaults } from "@/lib/telegram";
+import { PRO_DAYS } from "@/lib/config";
 import { LangStep } from "@/sections/LangStep";
 import { FormStep } from "@/sections/FormStep";
 import { PhotoStep } from "@/sections/PhotoStep";
@@ -41,6 +42,10 @@ export default function App() {
     saveProfile(p);
   };
 
+  // PRO expires after proUntil; expired PRO silently falls back to Free
+  const proActive = Boolean(profile.pro && (!profile.proUntil || profile.proUntil > Date.now()));
+  const view: Profile = { ...profile, pro: proActive };
+
   if (showShared && shared) {
     return (
       <CardView
@@ -59,7 +64,7 @@ export default function App() {
     <>
       {step === "lang" && (
         <LangStep
-          initial={profile.lang}
+          initial={view.lang}
           onDone={(lang) => {
             update({ ...profile, lang });
             setStep("form");
@@ -68,32 +73,33 @@ export default function App() {
       )}
 
       {step === "form" && (
-        <FormStep profile={profile} onBack={() => setStep("lang")} onDone={(p) => (update(p), setStep("photo"))} />
+        <FormStep profile={view} onBack={() => setStep("lang")} onDone={(p) => (update(p), setStep("photo"))} />
       )}
 
       {step === "photo" && (
-        <PhotoStep profile={profile} onBack={() => setStep("form")} onDone={(p) => (update(p), setStep("video"))} />
+        <PhotoStep profile={view} onBack={() => setStep("form")} onDone={(p) => (update(p), setStep("video"))} />
       )}
 
       {step === "video" && (
-        <VideoStep profile={profile} onBack={() => setStep("photo")} onDone={(p) => (update(p), setStep("card"))} />
+        <VideoStep profile={view} onBack={() => setStep("photo")} onDone={(p) => (update(p), setStep("card"))} />
       )}
 
       {step === "card" && (
         <CardView
-          profile={profile}
+          profile={view}
           mode="own"
           onEdit={() => setStep("form")}
           onOpenPaywall={() => setPaywall(true)}
+          onProfileChange={update}
         />
       )}
 
       {paywall && (
         <Paywall
-          lang={profile.lang}
+          lang={view.lang}
           onClose={() => setPaywall(false)}
           onActivate={() => {
-            update({ ...profile, pro: true });
+            update({ ...profile, pro: true, proUntil: Date.now() + PRO_DAYS * 24 * 60 * 60 * 1000 });
             setPaywall(false);
           }}
         />

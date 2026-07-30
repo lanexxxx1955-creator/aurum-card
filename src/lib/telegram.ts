@@ -44,6 +44,11 @@ export function tgUserDefaults(): { name?: string; tg?: string } {
   return { name: u.first_name ?? undefined, tg: u.username ?? undefined };
 }
 
+/** Telegram user id of the current Mini App user (undefined in plain browser) */
+export function tgUserId(): number | undefined {
+  return getTG()?.initDataUnsafe?.user?.id;
+}
+
 export function haptic(kind: "light" | "medium" | "success" = "light"): void {
   const tg = getTG();
   try {
@@ -69,11 +74,12 @@ export function openLink(url: string): void {
 }
 
 /**
- * Pay with Telegram Stars. In production `invoiceUrl` is created by the bot
- * backend (Bot API createInvoiceLink, currency XTR). In the demo build there
- * is no backend, so the payment is simulated.
+ * Pay via Telegram Payments. `invoiceUrl` is created through Bot API
+ * createInvoiceLink (RUB via a payment provider, or Stars with currency XTR).
+ * Returns "paid" | "cancelled", or "demo" when the app runs outside Telegram
+ * without an invoice URL (demo build simulates the payment).
  */
-export async function payWithStars(invoiceUrl?: string): Promise<"paid" | "demo" | "cancelled"> {
+export async function payWithInvoice(invoiceUrl?: string): Promise<"paid" | "demo" | "cancelled"> {
   const tg = getTG();
   if (invoiceUrl && tg?.openInvoice) {
     return new Promise((resolve) => {
