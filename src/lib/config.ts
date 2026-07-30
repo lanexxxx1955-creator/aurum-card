@@ -5,8 +5,8 @@
  * validates the Telegram initData signature before touching the Bot API.
  */
 
-/** Cloudflare Worker proxy URL. Replace YOUR-SUBDOMAIN after `wrangler deploy`. */
-export const API_BASE = "https://aurum-card-proxy.YOUR-SUBDOMAIN.workers.dev";
+/** Cloudflare Worker proxy URL (deployed) */
+export const API_BASE = "https://aurum-card-proxy.lanexxxx1955.workers.dev";
 
 export const BOT_USERNAME = "AURUM_CARD_BOT";
 
