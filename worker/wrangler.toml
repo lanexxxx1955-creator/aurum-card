@@ -1,0 +1,10 @@
+name = "aurum-card-proxy"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Secrets are NOT stored here. Set them once:
+#   npx wrangler secret put BOT_TOKEN
+#   npx wrangler secret put PAYMENT_PROVIDER_TOKEN   (optional, enables live payments)
+
+[vars]
+ALLOWED_ORIGIN = "https://lanexxxx1955-creator.github.io,http://localhost:3000,http://localhost:7100"

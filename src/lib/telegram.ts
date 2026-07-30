@@ -4,6 +4,7 @@ export interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   close: () => void;
+  initData?: string;
   setHeaderColor?: (c: string) => void;
   setBackgroundColor?: (c: string) => void;
   openTelegramLink?: (url: string) => void;
@@ -47,6 +48,11 @@ export function tgUserDefaults(): { name?: string; tg?: string } {
 /** Telegram user id of the current Mini App user (undefined in plain browser) */
 export function tgUserId(): number | undefined {
   return getTG()?.initDataUnsafe?.user?.id;
+}
+
+/** Raw initData string for server-side signature validation (empty outside Telegram) */
+export function getInitData(): string {
+  return getTG()?.initData ?? "";
 }
 
 export function haptic(kind: "light" | "medium" | "success" = "light"): void {

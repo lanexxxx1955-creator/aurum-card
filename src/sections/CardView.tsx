@@ -4,9 +4,9 @@ import type { Profile } from "@/lib/types";
 import { Screen, Brand, GoldButton, GhostButton } from "@/components/Lux";
 import { buildCardUrl, downloadVCard, drawQr } from "@/lib/share";
 import { loadVideo } from "@/lib/idb";
-import { getTelegramFileUrl, uploadGreetingVideo, BotApiError } from "@/lib/botapi";
-import { BOT_USERNAME } from "@/lib/config";
-import { haptic, openLink, shareViaTelegram, tgUserId } from "@/lib/telegram";
+import { uploadGreetingVideo, telegramVideoUrl, BotApiError } from "@/lib/botapi";
+import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
+import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
 
 type CloudStatus = "idle" | "uploading" | "cloud" | "need-start" | "error";
 
@@ -43,15 +43,15 @@ export function CardView({
 
   useEffect(() => {
     if (mode !== "own" || !profile.hasVideo || profile.videoFileId || uploadStarted.current) return;
-    const uid = tgUserId();
-    if (!uid) return; // plain browser preview — cloud upload needs Telegram
+    const initData = getInitData();
+    if (!initData || !proxyConfigured()) return; // browser preview or proxy not deployed yet
     uploadStarted.current = true;
     setCloud("uploading");
     (async () => {
       try {
         const blob = await loadVideo();
         if (!blob) throw new Error("no local video");
-        const fileId = await uploadGreetingVideo(uid, blob);
+        const fileId = await uploadGreetingVideo(initData, blob);
         onProfileChange?.({ ...profile, videoFileId: fileId });
         setCloud("cloud");
       } catch (e) {
@@ -66,12 +66,10 @@ export function CardView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, profile.hasVideo, profile.videoFileId]);
 
-  /* Shared card: fetch the greeting video from Telegram cloud by file_id */
+  /* Shared card: stream the greeting video from Telegram cloud via the proxy */
   useEffect(() => {
     if (mode !== "shared" || !profile.videoFileId) return;
-    getTelegramFileUrl(profile.videoFileId)
-      .then(setVideoUrl)
-      .catch(() => setVideoUrl(null));
+    setVideoUrl(telegramVideoUrl(profile.videoFileId));
   }, [mode, profile.videoFileId]);
 
   useEffect(() => {

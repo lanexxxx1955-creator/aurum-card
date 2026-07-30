@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import type { LangCode } from "@/lib/types";
-import { payWithInvoice, shareViaTelegram, tgUserId } from "@/lib/telegram";
-import { createProInvoiceLink } from "@/lib/botapi";
-import { PAYMENT_PROVIDER_TOKEN } from "@/lib/config";
+import { payWithInvoice, shareViaTelegram, getInitData } from "@/lib/telegram";
+import { createProInvoiceLink, BotApiError } from "@/lib/botapi";
+import { proxyConfigured } from "@/lib/config";
 
 function PlanColumn({
   title,
@@ -48,7 +48,7 @@ export function Paywall({
   const [state, setState] = useState<"idle" | "paying" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const livePayments = Boolean(PAYMENT_PROVIDER_TOKEN) && Boolean(tgUserId());
+  const livePayments = proxyConfigured() && Boolean(getInitData());
 
   const buy = async () => {
     setState("paying");
@@ -56,8 +56,14 @@ export function Paywall({
     try {
       let result: "paid" | "demo" | "cancelled";
       if (livePayments) {
-        const invoiceUrl = await createProInvoiceLink(tgUserId()!, PAYMENT_PROVIDER_TOKEN);
-        result = await payWithInvoice(invoiceUrl);
+        try {
+          const invoiceUrl = await createProInvoiceLink(getInitData());
+          result = await payWithInvoice(invoiceUrl);
+        } catch (e) {
+          // Provider token not set on the worker yet → honest demo mode
+          if (e instanceof BotApiError && e.code === 501) result = await payWithInvoice(undefined);
+          else throw e;
+        }
       } else {
         result = await payWithInvoice(undefined); // demo simulation
       }
