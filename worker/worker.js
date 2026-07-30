@@ -180,8 +180,23 @@ async function handleFile(url, request, env, origin) {
   const upstream = await fetch(`https://api.telegram.org/file/bot${env.BOT_TOKEN}/${meta.result.file_path}`, {
     headers,
   });
+
+  /* Telegram serves files as application/octet-stream, which breaks <video>
+     playback in several browsers — restore the real MIME from the extension */
+  const path = String(meta.result.file_path || "").toLowerCase();
+  const mimeByExt = path.endsWith(".mp4")
+    ? "video/mp4"
+    : path.endsWith(".webm")
+      ? "video/webm"
+      : path.endsWith(".mov")
+        ? "video/quicktime"
+        : null;
+  const upstreamType = upstream.headers.get("Content-Type") || "";
+  const contentType =
+    mimeByExt || (upstreamType.startsWith("video/") ? upstreamType : "application/octet-stream");
+
   const respHeaders = cors(origin, {
-    "Content-Type": upstream.headers.get("Content-Type") || "video/webm",
+    "Content-Type": contentType,
     "Cache-Control": "public, max-age=3600",
     "Accept-Ranges": "bytes",
   });

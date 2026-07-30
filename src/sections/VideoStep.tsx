@@ -41,6 +41,16 @@ export function VideoStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Bind the camera stream AFTER the <video> element mounts (it only exists
+     once state === "recording"); keys force remount between live/review */
+  useEffect(() => {
+    if (state === "recording" && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => undefined);
+    }
+  }, [state]);
+
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
@@ -53,13 +63,7 @@ export function VideoStep({
         audio: true,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        await videoRef.current.play().catch(() => undefined);
-      }
-
-      const mime = ["video/webm;codecs=vp9,opus", "video/webm", "video/mp4"].find((m) =>
+      const mime = ["video/mp4", "video/webm;codecs=vp9,opus", "video/webm"].find((m) =>
         typeof MediaRecorder !== "undefined" ? MediaRecorder.isTypeSupported(m) : false,
       );
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
@@ -149,9 +153,9 @@ export function VideoStep({
 
           <div className="absolute inset-[10px] overflow-hidden rounded-full bg-[#14100a]">
             {state === "review" && reviewUrl ? (
-              <video ref={videoRef} src={reviewUrl} className="h-full w-full object-cover" controls playsInline />
+              <video key="review" ref={videoRef} src={reviewUrl} className="h-full w-full object-cover" controls playsInline />
             ) : state === "recording" ? (
-              <video ref={videoRef} className="h-full w-full -scale-x-100 object-cover" playsInline muted />
+              <video key="rec" ref={videoRef} className="h-full w-full -scale-x-100 object-cover" playsInline muted />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[#d4af37]/60">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3">

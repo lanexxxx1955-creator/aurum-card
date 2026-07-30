@@ -32,6 +32,7 @@ export function CardView({
   const [cloud, setCloud] = useState<CloudStatus>(profile.videoFileId ? "cloud" : "idle");
   const [sharing, setSharing] = useState(false);
   const [needUnmute, setNeedUnmute] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   const vidRef = useRef<HTMLVideoElement>(null);
   const uploadStarted = useRef(false);
@@ -135,9 +136,19 @@ export function CardView({
     shareViaTelegram(url, `${t(lang, "shareText")} — ${profile.name}`);
   };
 
-  const media = showVideo && videoUrl ? (
+  const media = showVideo && videoUrl && !videoError ? (
     <>
-      <video ref={vidRef} src={videoUrl} className="h-full w-full object-cover" controls playsInline />
+      <video
+        ref={vidRef}
+        src={videoUrl}
+        className="h-full w-full object-cover"
+        controls
+        playsInline
+        onError={() => {
+          setVideoError(true);
+          setShowVideo(false);
+        }}
+      />
       {needUnmute && (
         <button
           onClick={() => {
@@ -179,7 +190,7 @@ export function CardView({
           {/* Photo / video circle */}
           <div className="ring-gold relative mx-auto mb-5 h-40 w-40 overflow-hidden">
             {media}
-            {videoUrl && !showVideo && (
+            {videoUrl && !showVideo && !videoError && (
               <button
                 onClick={() => setShowVideo(true)}
                 className="absolute inset-0 flex items-center justify-center bg-black/35 transition-colors hover:bg-black/25"
@@ -191,6 +202,17 @@ export function CardView({
               </button>
             )}
           </div>
+
+          {videoError && videoUrl && (
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noopener"
+              className="mb-4 inline-block text-[11px] text-[#d4af37] underline"
+            >
+              ⚠ Видео не играет в этом браузере — открыть напрямую
+            </a>
+          )}
 
           <h1 className="font-display text-3xl font-semibold leading-tight text-[#f6e7b2]">{profile.name}</h1>
 
