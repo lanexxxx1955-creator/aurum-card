@@ -45,3 +45,26 @@ export async function createProInvoiceLink(initData: string): Promise<string> {
   if (!data.ok) throw new BotApiError(data.error_code ?? res.status, data.error ?? "invoice failed");
   return data.url as string;
 }
+
+/** Saves the card to KV via the proxy; returns the short public id for share links */
+export async function saveCard(initData: string, card: unknown, id?: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/card`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initData, card, id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!data.ok) throw new BotApiError(data.error_code ?? res.status, data.error ?? "save failed");
+  return data.id as string;
+}
+
+/** Loads a shared card by short id */
+export async function fetchCard(id: string): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/card?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    return data && data.name && data.tg ? (data as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}

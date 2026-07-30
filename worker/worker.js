@@ -31,6 +31,12 @@ export default {
       if (url.pathname === "/api/sendVideo" && request.method === "POST") {
         return await handleSendVideo(request, env, origin);
       }
+      if (url.pathname === "/api/card" && request.method === "POST") {
+        return await handleSaveCard(request, env, origin);
+      }
+      if (url.pathname === "/api/card" && request.method === "GET") {
+        return await handleGetCard(url, env, origin);
+      }
       if (url.pathname === "/api/invoice" && request.method === "POST") {
         return await handleInvoice(request, env, origin);
       }
@@ -69,10 +75,29 @@ function json(origin, body, status = 200) {
   });
 }
 
+/** Parses initData manually. URLSearchParams would turn "+" into a space and
+ *  corrupt values (user JSON, Ed25519 signature) → HMAC mismatch. decodeURIComponent
+ *  leaves "+" alone, so this is safe for both raw and percent-encoded input. */
+function parseInitData(initData) {
+  const pairs = [];
+  for (const part of String(initData).split("&")) {
+    if (!part) continue;
+    const idx = part.indexOf("=");
+    if (idx === -1) continue;
+    try {
+      pairs.push([decodeURIComponent(part.slice(0, idx)), decodeURIComponent(part.slice(idx + 1))]);
+    } catch {
+      pairs.push([part.slice(0, idx), part.slice(idx + 1)]);
+    }
+  }
+  return pairs;
+}
+
 /** Validates Telegram WebApp initData (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app) */
 async function validateInitData(initData, botToken) {
   if (!initData || !botToken) return null;
-  const params = new URLSearchParams(initData);
+  const pairs = parseInitData(initData);
+  const params = new Map(pairs);
   const hash = params.get("hash");
   if (!hash) return null;
   params.delete("hash");
@@ -166,6 +191,43 @@ async function handleFile(url, request, env, origin) {
   if (rangeHdr) respHeaders["Content-Range"] = rangeHdr;
 
   return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
+}
+
+/** POST /api/card — JSON { initData, card, id? }. Stores the card in KV,
+ *  returns a short public id for share links. Owner-validated via initData;
+ *  passing an existing id updates the card (edit flow). */
+async function handleSaveCard(request, env, origin) {
+  const body = await request.json().catch(() => ({}));
+  const user = await validateInitData(String(body.initData || ""), env.BOT_TOKEN);
+  if (!user || !user.id) return json(origin, { ok: false, error: "invalid initData" }, 401);
+
+  const card = body.card;
+  if (!card || typeof card !== "object" || !card.name || !card.tg) {
+    return json(origin, { ok: false, error: "bad card" }, 400);
+  }
+  const raw = JSON.stringify(card);
+  if (raw.length > 400 * 1024) return json(origin, { ok: false, error: "card too large" }, 413);
+
+  let id = typeof body.id === "string" && /^[A-Za-z0-9]{10}$/.test(body.id) ? body.id : null;
+  if (!id) {
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(10));
+    id = [...bytes].map((b) => alphabet[b % alphabet.length]).join("");
+  }
+  await env.CARDS.put(`card:${id}`, raw, { metadata: { owner: user.id, updated: Date.now() } });
+  return json(origin, { ok: true, id });
+}
+
+/** GET /api/card?id=... — public read by unguessable id (that IS the share link). */
+async function handleGetCard(url, env, origin) {
+  const id = url.searchParams.get("id") || "";
+  if (!/^[A-Za-z0-9]{10}$/.test(id)) return json(origin, { ok: false, error: "bad id" }, 400);
+  const raw = await env.CARDS.get(`card:${id}`);
+  if (!raw) return json(origin, { ok: false, error: "not found" }, 404);
+  return new Response(raw, {
+    status: 200,
+    headers: cors(origin, { "Content-Type": "application/json", "Cache-Control": "public, max-age=60" }),
+  });
 }
 
 /** POST /api/invoice — JSON { initData }. Returns { url } for WebApp.openInvoice.

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 import { Screen, Brand, GoldButton, GhostButton } from "@/components/Lux";
-import { buildCardUrl, downloadVCard, drawQr } from "@/lib/share";
+import { buildCardUrl, buildShortCardUrl, downloadVCard, drawQr } from "@/lib/share";
 import { loadVideo } from "@/lib/idb";
-import { uploadGreetingVideo, telegramVideoUrl, BotApiError } from "@/lib/botapi";
+import { uploadGreetingVideo, telegramVideoUrl, saveCard, BotApiError } from "@/lib/botapi";
 import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
 import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
 
@@ -30,10 +30,11 @@ export function CardView({
   const [showVideo, setShowVideo] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [cloud, setCloud] = useState<CloudStatus>(profile.videoFileId ? "cloud" : "idle");
+  const [sharing, setSharing] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   const uploadStarted = useRef(false);
 
-  const cardUrl = buildCardUrl(profile);
+  const cardUrl = profile.cardId ? buildShortCardUrl(profile.cardId) : buildCardUrl(profile);
 
   /* Own card: play the local recording; push it to Telegram cloud once */
   useEffect(() => {
@@ -76,9 +77,27 @@ export function CardView({
     if (showQr && qrRef.current) drawQr(qrRef.current, cardUrl);
   }, [showQr, cardUrl]);
 
-  const share = () => {
+  const share = async () => {
+    if (sharing) return;
+    setSharing(true);
+    haptic("light");
+    let url = cardUrl;
+    const initData = getInitData();
+    if (initData && proxyConfigured()) {
+      try {
+        // Save the card (photo + videoFileId included) to KV → short link
+        // that always fits in a single Telegram message.
+        const { pro: _p, proUntil: _u, cardId: _c, ...card } = profile;
+        const id = await saveCard(initData, card, profile.cardId);
+        if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id });
+        url = buildShortCardUrl(id);
+      } catch {
+        /* fall back to the encoded hash link */
+      }
+    }
+    setSharing(false);
     haptic("success");
-    shareViaTelegram(cardUrl, `${t(lang, "shareText")} — ${profile.name}`);
+    shareViaTelegram(url, `${t(lang, "shareText")} — ${profile.name}`);
   };
 
   const media = showVideo && videoUrl ? (
@@ -192,7 +211,7 @@ export function CardView({
         {/* Actions */}
         {mode === "own" ? (
           <div className="space-y-3">
-            <GoldButton onClick={share}>{t(lang, "share")}</GoldButton>
+            <GoldButton onClick={share}>{sharing ? "…" : t(lang, "share")}</GoldButton>
             <div className="flex gap-3">
               <GhostButton onClick={onEdit}>{t(lang, "editCard")}</GhostButton>
               {!profile.pro && <GhostButton onClick={onOpenPaywall}>✦ {t(lang, "proTitle")}</GhostButton>}

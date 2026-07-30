@@ -11,10 +11,23 @@ function fromBase64Url(s: string): string {
 }
 
 export function encodeCard(p: Profile): string {
-  const { name, tg, phone, company, field, position, lang, photo, hasVideo, videoFileId } = p;
+  // Photo is intentionally NOT inlined: it makes URLs exceed Telegram's
+  // message limit. Photos travel via KV (short links) or stay local.
+  const { name, tg, phone, company, field, position, lang, hasVideo, videoFileId } = p;
   return toBase64Url(
-    JSON.stringify({ name, tg, phone, company, field, position, lang, photo, hasVideo, videoFileId }),
+    JSON.stringify({ name, tg, phone, company, field, position, lang, hasVideo, videoFileId }),
   );
+}
+
+/** Short share URL backed by KV (#c=...), safe for a single Telegram message */
+export function buildShortCardUrl(cardId: string): string {
+  return `${location.origin}${location.pathname}#c=${cardId}`;
+}
+
+/** Extracts the KV card id from a location hash like "#c=Ab3xK9pQ12" */
+export function parseCardId(hash: string): string | null {
+  const m = hash.match(/#c=([A-Za-z0-9]{10})\b/);
+  return m ? m[1] : null;
 }
 
 export function decodeCard(hash: string): Profile | null {

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { LangCode, Profile, Step } from "@/lib/types";
-import { decodeCard, loadProfile, saveProfile } from "@/lib/share";
+import { decodeCard, loadProfile, parseCardId, saveProfile } from "@/lib/share";
+import { fetchCard } from "@/lib/botapi";
 import { initTelegram, tgUserDefaults } from "@/lib/telegram";
 import { PRO_DAYS } from "@/lib/config";
 import { LangStep } from "@/sections/LangStep";
@@ -17,10 +18,12 @@ function detectInitialLang(): LangCode {
 }
 
 export default function App() {
-  const shared = useMemo(() => decodeCard(location.hash), []);
+  const [shared, setShared] = useState<Profile | null>(() => decodeCard(location.hash));
   const [step, setStep] = useState<Step>("lang");
   const [paywall, setPaywall] = useState(false);
-  const [showShared, setShowShared] = useState(!!shared);
+  const [showShared, setShowShared] = useState(
+    () => !!decodeCard(location.hash) || !!parseCardId(location.hash),
+  );
   const [profile, setProfile] = useState<Profile>(() => {
     const saved = loadProfile();
     if (saved) return saved;
@@ -34,8 +37,13 @@ export default function App() {
 
   useEffect(() => {
     initTelegram();
-    if (!shared && loadProfile()) setStep("card");
-  }, [shared]);
+    const cardId = parseCardId(location.hash);
+    if (cardId) {
+      fetchCard(cardId).then((c) => c && setShared(c as unknown as Profile));
+    } else if (!decodeCard(location.hash) && loadProfile()) {
+      setStep("card");
+    }
+  }, []);
 
   const update = (p: Profile) => {
     setProfile(p);

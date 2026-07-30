@@ -8,3 +8,7 @@ compatibility_date = "2026-01-01"
 
 [vars]
 ALLOWED_ORIGIN = "https://lanexxxx1955-creator.github.io,http://localhost:3000,http://localhost:7100"
+
+[[kv_namespaces]]
+binding = "CARDS"
+id = "9acfc2773c8f4c34a94eaae389911615"

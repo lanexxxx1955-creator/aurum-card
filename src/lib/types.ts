@@ -18,6 +18,7 @@ export interface Profile {
   photo?: string; // compressed dataURL
   hasVideo?: boolean;
   videoFileId?: string; // Telegram cloud file_id of the greeting video
+  cardId?: string; // short KV id for share links (#c=...)
   pro?: boolean;
   proUntil?: number; // PRO subscription expiry timestamp (ms)
   createdAt?: number;
