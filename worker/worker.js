@@ -12,7 +12,8 @@
  *   ALLOWED_ORIGIN          — comma-separated CORS allowlist, or *
  */
 
-const PRICE_RUB = 299;
+const PRICE_RUB = 299; // used when a payment provider token is configured
+const PRICE_STARS = 200; // Telegram Stars fallback (works for individuals, ≈ 299 ₽)
 
 export default {
   async fetch(request, env) {
@@ -167,25 +168,36 @@ async function handleFile(url, request, env, origin) {
   return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
 }
 
-/** POST /api/invoice — JSON { initData }. Returns { url } for WebApp.openInvoice. */
+/** POST /api/invoice — JSON { initData }. Returns { url } for WebApp.openInvoice.
+ *  With PAYMENT_PROVIDER_TOKEN set → RUB via provider (needs self-employment/IE).
+ *  Without it → Telegram Stars (XTR), which works for individuals out of the box. */
 async function handleInvoice(request, env, origin) {
   const { initData } = await request.json().catch(() => ({}));
   const user = await validateInitData(String(initData || ""), env.BOT_TOKEN);
   if (!user || !user.id) return json(origin, { ok: false, error: "invalid initData" }, 401);
 
-  if (!env.PAYMENT_PROVIDER_TOKEN) {
-    return json(origin, { ok: false, error_code: 501, error: "payments not configured" }, 501);
-  }
-
-  const data = await tgApi(env, "createInvoiceLink", {
+  const base = {
     title: "AURUM PRO — 1 месяц",
     description:
       "До 3 визиток, видео-приветствие 60 сек, без водяного знака, облачное видео, аналитика просмотров, платиновые темы.",
     payload: `pro_${user.id}_${Date.now()}`,
-    provider_token: env.PAYMENT_PROVIDER_TOKEN,
-    currency: "RUB",
-    prices: [{ label: "AURUM PRO (30 дней)", amount: PRICE_RUB * 100 }],
-  });
+  };
+
+  const invoice = env.PAYMENT_PROVIDER_TOKEN
+    ? {
+        ...base,
+        provider_token: env.PAYMENT_PROVIDER_TOKEN,
+        currency: "RUB",
+        prices: [{ label: "AURUM PRO (30 дней)", amount: PRICE_RUB * 100 }],
+      }
+    : {
+        ...base,
+        provider_token: "",
+        currency: "XTR",
+        prices: [{ label: "AURUM PRO (30 дней)", amount: Number(env.PRICE_STARS || PRICE_STARS) }],
+      };
+
+  const data = await tgApi(env, "createInvoiceLink", invoice);
   if (!data.ok) return json(origin, { ok: false, error: data.description || "telegram error" }, 502);
   return json(origin, { ok: true, url: data.result });
 }
