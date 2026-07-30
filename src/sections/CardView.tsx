@@ -31,7 +31,9 @@ export function CardView({
   const [showQr, setShowQr] = useState(false);
   const [cloud, setCloud] = useState<CloudStatus>(profile.videoFileId ? "cloud" : "idle");
   const [sharing, setSharing] = useState(false);
+  const [needUnmute, setNeedUnmute] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
+  const vidRef = useRef<HTMLVideoElement>(null);
   const uploadStarted = useRef(false);
 
   const cardUrl = profile.cardId ? buildShortCardUrl(profile.cardId) : buildCardUrl(profile);
@@ -73,6 +75,25 @@ export function CardView({
     setVideoUrl(telegramVideoUrl(profile.videoFileId));
   }, [mode, profile.videoFileId]);
 
+  /* Shared card: show the photo for 2 seconds, then auto-start the video */
+  useEffect(() => {
+    if (mode !== "shared" || !videoUrl || showVideo) return;
+    const timer = setTimeout(() => setShowVideo(true), 2000);
+    return () => clearTimeout(timer);
+  }, [mode, videoUrl, showVideo]);
+
+  /* Autoplay with sound; browsers may block unmuted autoplay → muted + 🔊 button */
+  useEffect(() => {
+    if (!showVideo || !vidRef.current) return;
+    const v = vidRef.current;
+    v.muted = false;
+    v.play().catch(() => {
+      v.muted = true;
+      v.play().catch(() => undefined);
+      setNeedUnmute(true);
+    });
+  }, [showVideo, videoUrl]);
+
   useEffect(() => {
     if (showQr && qrRef.current) drawQr(qrRef.current, cardUrl);
   }, [showQr, cardUrl]);
@@ -85,11 +106,25 @@ export function CardView({
     const initData = getInitData();
     if (initData && proxyConfigured()) {
       try {
-        // Save the card (photo + videoFileId included) to KV → short link
-        // that always fits in a single Telegram message.
+        // Make sure the greeting video is in Telegram cloud BEFORE saving,
+        // so the shared card always carries videoFileId.
+        let videoFileId = profile.videoFileId;
+        if (profile.hasVideo && !videoFileId) {
+          uploadStarted.current = true;
+          const blob = await loadVideo();
+          if (blob) {
+            try {
+              videoFileId = await uploadGreetingVideo(initData, blob);
+              onProfileChange?.({ ...profile, videoFileId });
+              setCloud("cloud");
+            } catch {
+              /* share without video */
+            }
+          }
+        }
         const { pro: _p, proUntil: _u, cardId: _c, ...card } = profile;
-        const id = await saveCard(initData, card, profile.cardId);
-        if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id });
+        const id = await saveCard(initData, { ...card, videoFileId }, profile.cardId);
+        if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id, videoFileId });
         url = buildShortCardUrl(id);
       } catch {
         /* fall back to the encoded hash link */
@@ -101,7 +136,25 @@ export function CardView({
   };
 
   const media = showVideo && videoUrl ? (
-    <video src={videoUrl} className="h-full w-full object-cover" controls autoPlay playsInline />
+    <>
+      <video ref={vidRef} src={videoUrl} className="h-full w-full object-cover" controls playsInline />
+      {needUnmute && (
+        <button
+          onClick={() => {
+            const v = vidRef.current;
+            if (v) {
+              v.muted = false;
+              v.play().catch(() => undefined);
+            }
+            setNeedUnmute(false);
+          }}
+          className="absolute bottom-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[#d4af37]/50 bg-black/70 text-sm"
+          aria-label="Unmute"
+        >
+          🔊
+        </button>
+      )}
+    </>
   ) : profile.photo ? (
     <img src={profile.photo} alt={profile.name} className="h-full w-full object-cover" />
   ) : (
