@@ -415,6 +415,30 @@ async function handleTelegramWebhook(request, env, origin) {
     return json(origin, { ok: true });
   }
 
+  // pre_checkout_query — MUST be answered within 10s or Telegram cancels the payment
+  if (update.pre_checkout_query) {
+    const q = update.pre_checkout_query;
+    const expectedAmount = Number(env.PRICE_STARS || PRICE_STARS);
+    const ok =
+      typeof q.invoice_payload === "string" &&
+      q.invoice_payload.startsWith("pro_") &&
+      q.currency === "XTR" &&
+      q.total_amount === expectedAmount;
+    await tgApi(env, "answerPreCheckoutQuery", ok
+      ? { pre_checkout_query_id: q.id, ok: true }
+      : { pre_checkout_query_id: q.id, ok: false, error_message: "Invoice mismatch, please try again" });
+    return json(origin, { ok: true });
+  }
+
+  // successful_payment — confirm PRO activation in the bot chat
+  if (update.message && update.message.successful_payment) {
+    await tgApi(env, "sendMessage", {
+      chat_id: update.message.chat.id,
+      text: "✦ Оплата получена! AURUM PRO активирован на 30 дней.\nОблачное видео, до 3 визиток, без водяного знака. Роскошного вам нетворкинга!",
+    });
+    return json(origin, { ok: true });
+  }
+
   // Inline query — cards of THIS user only (owner check via KV metadata)
   if (update.inline_query) {
     const uid = update.inline_query.from.id;
