@@ -92,6 +92,19 @@ const en: Dict = {
   refText: "Get 1 free PRO month for every 3 invited friends.",
   invite: "Invite",
   demoPayNote: "Demo build: payment is simulated. In production — Telegram Stars, 200 ⭐ ≈ 299 ₽/month.",
+  restart: "Start over",
+  restartConfirm: "Erase everything and restart?",
+  cabinet: "My account",
+  myCards: "My cards",
+  subscription: "Subscription",
+  daysLeft: "days left",
+  ownerBadge: "OWNER",
+  upgradePro: "Get PRO",
+  select: "Select",
+  active: "Active",
+  emptyCards: "Cards you share will appear here",
+  proForever: "Unlimited PRO — you are the owner",
+  remove: "Remove",
 };
 
 const ru: Dict = {
@@ -170,6 +183,19 @@ const ru: Dict = {
   refText: "1 месяц PRO бесплатно за каждых 3 приглашённых друзей.",
   invite: "Пригласить",
   demoPayNote: "Демо-сборка: оплата симулируется. В продакшене — Telegram Stars, 200 ⭐ ≈ 299 ₽/мес.",
+  restart: "Начать заново",
+  restartConfirm: "Стереть все данные и начать заново?",
+  cabinet: "Кабинет",
+  myCards: "Мои визитки",
+  subscription: "Подписка",
+  daysLeft: "дней осталось",
+  ownerBadge: "ВЛАДЕЛЕЦ",
+  upgradePro: "Оформить PRO",
+  select: "Выбрать",
+  active: "Активна",
+  emptyCards: "Визитки, которыми вы поделились, появятся здесь",
+  proForever: "PRO без ограничений — вы владелец",
+  remove: "Убрать",
 };
 
 const be: Dict = {
@@ -248,6 +274,19 @@ const be: Dict = {
   refText: "1 месяц PRO бясплатна за кожных 3 запрошаных сяброў.",
   invite: "Запрасіць",
   demoPayNote: "Дэма-зборка: аплата сімулюецца. У продакшене — Telegram Payments, 299 ₽/мес.",
+  restart: "Пачаць нанова",
+  restartConfirm: "Сцерці ўсё і пачаць нанова?",
+  cabinet: "Кабінет",
+  myCards: "Мае візіткі",
+  subscription: "Падпіска",
+  daysLeft: "дзён засталося",
+  ownerBadge: "УЛАСНІК",
+  upgradePro: "Аформіць PRO",
+  select: "Выбраць",
+  active: "Актыўная",
+  emptyCards: "Візіткі, якімі вы падзяліліся, з'явяцца тут",
+  proForever: "PRO без абмежаванняў — вы ўласнік",
+  remove: "Прыбраць",
 };
 
 const kk: Dict = {
@@ -326,6 +365,19 @@ const kk: Dict = {
   refText: "Әр 3 шақырылған дос үшін 1 ай PRO тегін.",
   invite: "Шақыру",
   demoPayNote: "Демо-нұсқа: төлем симуляцияланады. Продакшнда — Telegram Payments, 299 ₽/ай.",
+  restart: "Қайта бастау",
+  restartConfirm: "Барлығын өшіріп, қайта бастау?",
+  cabinet: "Жеке кабинет",
+  myCards: "Менің визиткаларым",
+  subscription: "Жазылым",
+  daysLeft: "күн қалды",
+  ownerBadge: "ИЕСІ",
+  upgradePro: "PRO рәсімдеу",
+  select: "Таңдау",
+  active: "Белсенді",
+  emptyCards: "Бөліскен визиткалар осы жерде болады",
+  proForever: "PRO шексіз — сіз иесісіз",
+  remove: "Алып тастау",
 };
 
 const uz: Dict = {
@@ -404,6 +456,19 @@ const uz: Dict = {
   refText: "Har 3 taklif qilingan do'st uchun 1 oy PRO bepul.",
   invite: "Taklif qilish",
   demoPayNote: "Demo-versiya: to'lov simulyatsiya qilinadi. Produckshda — Telegram Payments, 299 ₽/oy.",
+  restart: "Qaytadan boshlash",
+  restartConfirm: "Hammasini o'chirib, qayta boshlash?",
+  cabinet: "Kabinet",
+  myCards: "Mening vizitkalarim",
+  subscription: "Obuna",
+  daysLeft: "kun qoldi",
+  ownerBadge: "EGASI",
+  upgradePro: "PRO rasmiylashtirish",
+  select: "Tanlash",
+  active: "Faol",
+  emptyCards: "Ulashilgan vizitkalar shu yerda bo'ladi",
+  proForever: "PRO cheksiz — siz egasisiz",
+  remove: "Olib tashlash",
 };
 
 const az: Dict = {
@@ -482,6 +547,19 @@ const az: Dict = {
   refText: "Hər 3 dəvət edilmiş dost üçün 1 ay PRO pulsuz.",
   invite: "Dəvət et",
   demoPayNote: "Demo versiya: ödəniş simulyasiya olunur. Produksiyada — Telegram Payments, 299 ₽/ay.",
+  restart: "Yenidən başla",
+  restartConfirm: "Hər şeyi silib yenidən başlamaq?",
+  cabinet: "Kabinet",
+  myCards: "Vizit kartlarım",
+  subscription: "Abunəlik",
+  daysLeft: "gün qaldı",
+  ownerBadge: "SAHİB",
+  upgradePro: "PRO rəsmiləşdir",
+  select: "Seç",
+  active: "Aktiv",
+  emptyCards: "Paylaşılan kartlar burada görünəcək",
+  proForever: "PRO limitsiz — siz sahibsiniz",
+  remove: "Sil",
 };
 
 const hy: Dict = {
@@ -560,6 +638,19 @@ const hy: Dict = {
   refText: "1 ամիս PRO անվճար՝ յուրաքանչյուր 3 հրավիրված ընկերոջ համար։",
   invite: "Հրավիրել",
   demoPayNote: "Դեմո տարբերակ. վճարումը սիմուլյացիա է։ Արտադրության մեջ — Telegram Payments, 299 ₽/ամիս։",
+  restart: "Սկսել նորից",
+  restartConfirm: "Ջնջել ամենը և սկսել նորից?",
+  cabinet: "Կաբինետ",
+  myCards: "Իմ այցեքարտերը",
+  subscription: "Բաժանորդագրություն",
+  daysLeft: "օր մնաց",
+  ownerBadge: "ՏԻՐԱՊԵՏ",
+  upgradePro: "Ձևակերպել PRO",
+  select: "Ընտրել",
+  active: "Ակտիվ",
+  emptyCards: "Կիսված այցեքարտերը կհայտնվեն այստեղ",
+  proForever: "PRO անսահման — դուք տիրապետն եք",
+  remove: "Հեռացնել",
 };
 
 const ky: Dict = {
@@ -638,6 +729,19 @@ const ky: Dict = {
   refText: "Ар 3 чакырылган дос үчүн 1 ай PRO бекер.",
   invite: "Чакыруу",
   demoPayNote: "Демо-версия: төлөм симуляцияланат. Продакшнда — Telegram Payments, 299 ₽/ай.",
+  restart: "Кайра баштоо",
+  restartConfirm: "Баарын өчүрүп, кайра баштоо?",
+  cabinet: "Кабинет",
+  myCards: "Менин визиткаларым",
+  subscription: "Жазылуу",
+  daysLeft: "күн калды",
+  ownerBadge: "ЭЭСИ",
+  upgradePro: "PRO тариздөө",
+  select: "Тандоо",
+  active: "Активдүү",
+  emptyCards: "Бөлүшүлгөн визиткалар ушул жерде болот",
+  proForever: "PRO чексиз — сиз ээсисиз",
+  remove: "Алып салуу",
 };
 
 const tgDict: Dict = {
@@ -716,6 +820,19 @@ const tgDict: Dict = {
   refText: "1 моҳи PRO ройгон барои ҳар 3 дӯсти даъватшуда.",
   invite: "Даъват",
   demoPayNote: "Версияи демо: пардохт тақлид мешавад. Дар продакшн — Telegram Payments, 299 ₽/моҳ.",
+  restart: "Аз нав оғоз",
+  restartConfirm: "Ҳамаро пок карда, аз нав оғоз кардан?",
+  cabinet: "Кабинет",
+  myCards: "Кортҳои ман",
+  subscription: "Обуна",
+  daysLeft: "рӯз монд",
+  ownerBadge: "СОҲИБ",
+  upgradePro: "PRO расмият диҳед",
+  select: "Интихоб",
+  active: "Фаъол",
+  emptyCards: "Кортҳои мубодилашуда дар ин ҷо мебошанд",
+  proForever: "PRO бе маҳдудият — шумо соҳиб ҳастед",
+  remove: "Бар даштан",
 };
 
 const tk: Dict = {
@@ -794,6 +911,19 @@ const tk: Dict = {
   refText: "Her 3 çagyrylan dost üçin 1 aý PRO mugt.",
   invite: "Çagyr",
   demoPayNote: "Demo wersiýa: töleg simulýirlenýär. Produkşende — Telegram Payments, 299 ₽/aý.",
+  restart: "Täzeden başlat",
+  restartConfirm: "Hemmesini pozup täzeden başlat?",
+  cabinet: "Kabinet",
+  myCards: "Meniň wizitkalarim",
+  subscription: "Abunalyk",
+  daysLeft: "gün galdy",
+  ownerBadge: "EÝESI",
+  upgradePro: "PRO resmileşdir",
+  select: "Saýla",
+  active: "Işjeň",
+  emptyCards: "Paýlaşylan wizitkalar şu ýerde bolar",
+  proForever: "PRO çäksiz — siz eýesisiniz",
+  remove: "Aýyr",
 };
 
 const ro: Dict = {
@@ -872,6 +1002,19 @@ const ro: Dict = {
   refText: "1 lună PRO gratuit pentru fiecare 3 prieteni invitați.",
   invite: "Invită",
   demoPayNote: "Versiune demo: plata este simulată. În producție — Telegram Payments, 299 ₽/lună.",
+  restart: "Reîncepe",
+  restartConfirm: "Ștergi tot și reîncepi?",
+  cabinet: "Cabinet",
+  myCards: "Cărțile mele",
+  subscription: "Abonament",
+  daysLeft: "zile rămase",
+  ownerBadge: "PROPRIETAR",
+  upgradePro: "Activează PRO",
+  select: "Alege",
+  active: "Activă",
+  emptyCards: "Cărțile partajate vor apărea aici",
+  proForever: "PRO nelimitat — ești proprietarul",
+  remove: "Elimină",
 };
 
 const dicts: Record<LangCode, Dict> = {

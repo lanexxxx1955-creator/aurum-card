@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import type { LangCode, Profile, Step } from "@/lib/types";
-import { decodeCard, loadProfile, parseCardId, saveProfile } from "@/lib/share";
+import { clearProfile, decodeCard, loadProfile, parseCardId, saveProfile } from "@/lib/share";
 import { fetchCard } from "@/lib/botapi";
-import { initTelegram, tgUserDefaults } from "@/lib/telegram";
-import { PRO_DAYS } from "@/lib/config";
+import { initTelegram, tgUserDefaults, tgUserId } from "@/lib/telegram";
+import { PRO_DAYS, OWNER_IDS } from "@/lib/config";
+import { clearCardsList, type CardSummary } from "@/lib/cards";
+import { deleteVideo } from "@/lib/idb";
 import { LangStep } from "@/sections/LangStep";
 import { FormStep } from "@/sections/FormStep";
 import { PhotoStep } from "@/sections/PhotoStep";
 import { VideoStep } from "@/sections/VideoStep";
 import { CardView } from "@/sections/CardView";
+import { Cabinet } from "@/sections/Cabinet";
 import { Paywall } from "@/sections/Paywall";
 
 function detectInitialLang(): LangCode {
@@ -50,9 +53,40 @@ export default function App() {
     saveProfile(p);
   };
 
-  // PRO expires after proUntil; expired PRO silently falls back to Free
+  /** Full local reset: profile, cards library, recorded video → fresh onboarding */
+  const restart = () => {
+    clearProfile();
+    clearCardsList();
+    deleteVideo().finally(() => {
+      history.replaceState(null, "", location.pathname);
+      location.reload();
+    });
+  };
+
+  /** Pick a previously shared card from the cabinet library */
+  const selectCard = async (s: CardSummary) => {
+    const c = await fetchCard(s.id);
+    if (c) {
+      const fetched = c as unknown as Profile;
+      update({
+        ...fetched,
+        lang: fetched.lang || profile.lang,
+        pro: profile.pro,
+        proUntil: profile.proUntil,
+        cardId: s.id,
+      });
+    } else {
+      // KV entry is gone — still switch to the local summary
+      update({ ...profile, cardId: s.id });
+    }
+    setStep("card");
+  };
+
+  const isOwner = OWNER_IDS.includes(tgUserId() ?? -1);
+
+  // PRO expires after proUntil; the owner has unlimited PRO
   const proActive = Boolean(profile.pro && (!profile.proUntil || profile.proUntil > Date.now()));
-  const view: Profile = { ...profile, pro: proActive };
+  const view: Profile = { ...profile, pro: proActive || isOwner };
 
   if (showShared && shared) {
     return (
@@ -94,11 +128,25 @@ export default function App() {
 
       {step === "card" && (
         <CardView
+          key={view.cardId ?? "new"}
           profile={view}
           mode="own"
+          isOwner={isOwner}
           onEdit={() => setStep("form")}
           onOpenPaywall={() => setPaywall(true)}
           onProfileChange={update}
+          onCabinet={() => setStep("cabinet")}
+          onRestart={restart}
+        />
+      )}
+
+      {step === "cabinet" && (
+        <Cabinet
+          profile={view}
+          isOwner={isOwner}
+          onClose={() => setStep("card")}
+          onSelect={selectCard}
+          onUpgrade={() => setPaywall(true)}
         />
       )}
 

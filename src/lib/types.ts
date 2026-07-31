@@ -24,7 +24,7 @@ export interface Profile {
   createdAt?: number;
 }
 
-export type Step = "lang" | "form" | "photo" | "video" | "card";
+export type Step = "lang" | "form" | "photo" | "video" | "card" | "cabinet";
 
 export const VIDEO_LIMIT_FREE = 20;
 export const VIDEO_LIMIT_PRO = 60;

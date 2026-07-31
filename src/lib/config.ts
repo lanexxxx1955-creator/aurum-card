@@ -18,3 +18,6 @@ export const PRO_DAYS = 30;
 export function proxyConfigured(): boolean {
   return !API_BASE.includes("YOUR-SUBDOMAIN");
 }
+
+/** Telegram user IDs with owner privileges (👑 badge + unlimited PRO) */
+export const OWNER_IDS: number[] = [767179768];

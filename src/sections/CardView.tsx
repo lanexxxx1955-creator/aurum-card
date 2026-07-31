@@ -6,6 +6,7 @@ import { buildCardUrl, buildShortCardUrl, downloadVCard, drawQr } from "@/lib/sh
 import { loadVideo } from "@/lib/idb";
 import { uploadGreetingVideo, telegramVideoUrl, saveCard, BotApiError } from "@/lib/botapi";
 import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
+import { upsertCardSummary } from "@/lib/cards";
 import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
 
 type CloudStatus = "idle" | "uploading" | "cloud" | "need-start" | "error";
@@ -13,17 +14,23 @@ type CloudStatus = "idle" | "uploading" | "cloud" | "need-start" | "error";
 export function CardView({
   profile,
   mode,
+  isOwner,
   onEdit,
   onOpenPaywall,
   onCreateOwn,
   onProfileChange,
+  onCabinet,
+  onRestart,
 }: {
   profile: Profile;
   mode: "own" | "shared";
+  isOwner?: boolean;
   onEdit?: () => void;
   onOpenPaywall?: () => void;
   onCreateOwn?: () => void;
   onProfileChange?: (p: Profile) => void;
+  onCabinet?: () => void;
+  onRestart?: () => void;
 }) {
   const lang = profile.lang;
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -33,17 +40,22 @@ export function CardView({
   const [sharing, setSharing] = useState(false);
   const [needUnmute, setNeedUnmute] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   const vidRef = useRef<HTMLVideoElement>(null);
   const uploadStarted = useRef(false);
 
   const cardUrl = profile.cardId ? buildShortCardUrl(profile.cardId) : buildCardUrl(profile);
 
-  /* Own card: play the local recording; push it to Telegram cloud once */
+  /* Own card: play the local recording; fall back to the Telegram cloud copy
+     when the local blob is gone (e.g. card picked from the library) */
   useEffect(() => {
     if (mode !== "own" || !profile.hasVideo) return;
-    loadVideo().then((b) => b && setVideoUrl((u) => u ?? URL.createObjectURL(b)));
-  }, [mode, profile.hasVideo]);
+    loadVideo().then((b) => {
+      if (b) setVideoUrl((u) => u ?? URL.createObjectURL(b));
+      else if (profile.videoFileId) setVideoUrl(telegramVideoUrl(profile.videoFileId));
+    });
+  }, [mode, profile.hasVideo, profile.videoFileId]);
 
   useEffect(() => {
     if (mode !== "own" || !profile.hasVideo || profile.videoFileId || uploadStarted.current) return;
@@ -126,6 +138,7 @@ export function CardView({
         const { pro: _p, proUntil: _u, cardId: _c, ...card } = profile;
         const id = await saveCard(initData, { ...card, videoFileId }, profile.cardId);
         if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id, videoFileId });
+        upsertCardSummary({ id, name: profile.name, company: profile.company, photo: profile.photo, createdAt: Date.now() });
         url = buildShortCardUrl(id);
       } catch {
         /* fall back to the encoded hash link */
@@ -180,6 +193,13 @@ export function CardView({
         <Brand lang={lang} />
 
         <div className="gold-frame relative mb-5 rounded-3xl px-6 py-8 text-center">
+          {/* Owner badge */}
+          {isOwner && (
+            <div className="absolute left-4 top-4 z-10 rounded-full border border-[#d4af37]/60 bg-[#d4af37]/15 px-2.5 py-0.5 text-[9px] uppercase tracking-widest text-[#f6e7b2]">
+              👑 {t(lang, "ownerBadge")}
+            </div>
+          )}
+
           {/* Watermark */}
           {!profile.pro && (
             <div className="absolute right-4 top-4 z-10 rounded-full border border-[#d4af37]/30 px-2.5 py-0.5 text-[9px] uppercase tracking-widest text-[#d4af37]/60">
@@ -287,10 +307,28 @@ export function CardView({
         {mode === "own" ? (
           <div className="space-y-3">
             <GoldButton onClick={share}>{sharing ? "…" : t(lang, "share")}</GoldButton>
+            {!profile.pro && (
+              <GoldButton onClick={onOpenPaywall}>
+                ✦ {t(lang, "upgradePro")} · {t(lang, "proPrice")}
+              </GoldButton>
+            )}
             <div className="flex gap-3">
               <GhostButton onClick={onEdit}>{t(lang, "editCard")}</GhostButton>
-              {!profile.pro && <GhostButton onClick={onOpenPaywall}>✦ {t(lang, "proTitle")}</GhostButton>}
+              <GhostButton onClick={onCabinet}>{t(lang, "cabinet")}</GhostButton>
             </div>
+            <button
+              onClick={() => {
+                if (confirmReset) {
+                  onRestart?.();
+                } else {
+                  setConfirmReset(true);
+                  setTimeout(() => setConfirmReset(false), 3500);
+                }
+              }}
+              className="w-full pt-1 text-center text-[11px] uppercase tracking-widest text-red-400/70 transition-colors hover:text-red-400"
+            >
+              {confirmReset ? t(lang, "restartConfirm") : t(lang, "restart")}
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
