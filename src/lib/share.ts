@@ -59,9 +59,20 @@ export function buildVCard(p: Profile): string {
     p.position ? `TITLE:${p.position}` : "",
     `URL:https://t.me/${p.tg.replace(/^@/, "")}`,
     p.field ? `NOTE:${p.field}` : "",
-    "END:VCARD",
-  ].filter(Boolean);
-  return lines.join("\r\n");
+  ];
+
+  // Embed the photo so the recipient's phone shows it in the saved contact
+  const m = p.photo?.match(/^data:image\/(jpeg|jpg|png);base64,(.+)$/s);
+  if (m) {
+    const type = m[1] === "png" ? "PNG" : "JPEG";
+    // vCard 3.0 wants folded lines at 75 chars
+    const b64 = m[2];
+    const folded = b64.replace(/(.{75})/g, "$1\r\n ");
+    lines.push(`PHOTO;ENCODING=b;TYPE=${type}:${folded}`);
+  }
+
+  lines.push("END:VCARD");
+  return lines.filter(Boolean).join("\r\n");
 }
 
 export function downloadVCard(p: Profile): void {

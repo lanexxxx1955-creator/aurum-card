@@ -28,6 +28,15 @@ export default {
       if (url.pathname === "/api/health") {
         return json(origin, { ok: true });
       }
+      if (url.pathname.startsWith("/c/") && request.method === "GET") {
+        return await handleOgPage(url, env, origin, request);
+      }
+      if (url.pathname === "/api/cardPhoto" && request.method === "GET") {
+        return await handleCardPhoto(url, env, origin);
+      }
+      if (url.pathname === "/api/deleteCard" && request.method === "POST") {
+        return await handleDeleteCard(request, env, origin);
+      }
       if (url.pathname === "/api/sendVideo" && request.method === "POST") {
         return await handleSendVideo(request, env, origin);
       }
@@ -237,12 +246,122 @@ async function handleSaveCard(request, env, origin) {
 async function handleGetCard(url, env, origin) {
   const id = url.searchParams.get("id") || "";
   if (!/^[A-Za-z0-9]{10}$/.test(id)) return json(origin, { ok: false, error: "bad id" }, 400);
-  const raw = await env.CARDS.get(`card:${id}`);
+  const raw = await env.CARDS.get(`card:${id}`, { cacheTtl: 30 });
   if (!raw) return json(origin, { ok: false, error: "not found" }, 404);
   return new Response(raw, {
     status: 200,
     headers: cors(origin, { "Content-Type": "application/json", "Cache-Control": "public, max-age=60" }),
   });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+/** GET /c/<id> — Open Graph landing page. Telegram's crawler reads the meta
+ *  tags and renders a rich preview (photo + name); humans are redirected to
+ *  the Mini App card view. */
+async function handleOgPage(url, env, origin, request) {
+  const id = url.pathname.slice(3);
+  const appBase = (env.APP_URL || "https://lanexxxx1955-creator.github.io/aurum-card/").replace(/\/?$/, "/");
+  const appUrl = `${appBase}#c=${id}`;
+  const workerBase = `https://${url.host}`;
+
+  let card = null;
+  if (/^[A-Za-z0-9]{10}$/.test(id)) {
+    const raw = await env.CARDS.get(`card:${id}`, { cacheTtl: 30 });
+    if (raw) {
+      try {
+        card = JSON.parse(raw);
+      } catch {
+        card = null;
+      }
+    }
+  }
+
+  const name = card && card.name ? escapeHtml(card.name) : "AURUM CARD";
+  const desc = card
+    ? escapeHtml(`Видео-визитка · сохрани мои контакты — AURUM CARD`)
+    : "Видео-визитка — AURUM CARD";
+  const hasPhoto = Boolean(card && typeof card.photo === "string" && card.photo.startsWith("data:image/"));
+  const ogImage = hasPhoto ? `<meta property="og:image" content="${workerBase}/api/cardPhoto?id=${id}" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />` : "";
+
+  const html = `<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>${name} — AURUM CARD</title>
+    <meta property="og:title" content="${name}" />
+    <meta property="og:description" content="${desc}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${workerBase}/c/${id}" />
+    <meta property="og:site_name" content="AURUM CARD" />
+    ${ogImage}
+    <meta http-equiv="refresh" content="0;url=${appUrl}" />
+    <style>
+      body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0906;color:#d4af37;font-family:Georgia,serif}
+      .ring{width:88px;height:88px;border-radius:50%;border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 0 40px -8px rgba(212,175,55,.45)}
+      .t{text-align:center;letter-spacing:.28em;text-transform:uppercase;font-size:11px}
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="ring">✦</div>
+      <div class="t">AURUM CARD</div>
+    </div>
+    <script>location.replace(${JSON.stringify(appUrl)});</script>
+  </body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=60" },
+  });
+}
+
+/** GET /api/cardPhoto?id=... — serves the card's photo as image/jpeg (for OG previews). */
+async function handleCardPhoto(url, env, origin) {
+  const id = url.searchParams.get("id") || "";
+  if (!/^[A-Za-z0-9]{10}$/.test(id)) return json(origin, { ok: false, error: "bad id" }, 400);
+  const raw = await env.CARDS.get(`card:${id}`, { cacheTtl: 30 });
+  if (!raw) return json(origin, { ok: false, error: "not found" }, 404);
+
+  let photo = null;
+  try {
+    photo = JSON.parse(raw).photo;
+  } catch {
+    photo = null;
+  }
+  const m = typeof photo === "string" ? photo.match(/^data:image\/(jpeg|jpg|png);base64,(.+)$/s) : null;
+  if (!m) return json(origin, { ok: false, error: "no photo" }, 404);
+
+  const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+  return new Response(bytes, {
+    status: 200,
+    headers: cors(origin, {
+      "Content-Type": m[1] === "png" ? "image/png" : "image/jpeg",
+      "Cache-Control": "public, max-age=86400",
+    }),
+  });
+}
+
+/** POST /api/deleteCard — JSON { initData, id }. Owner-only (KV metadata check). */
+async function handleDeleteCard(request, env, origin) {
+  const body = await request.json().catch(() => ({}));
+  const user = await validateInitData(String(body.initData || ""), env.BOT_TOKEN);
+  if (!user || !user.id) return json(origin, { ok: false, error: "invalid initData" }, 401);
+
+  const id = String(body.id || "");
+  if (!/^[A-Za-z0-9]{10}$/.test(id)) return json(origin, { ok: false, error: "bad id" }, 400);
+
+  const { metadata } = await env.CARDS.getWithMetadata(`card:${id}`);
+  if (metadata && metadata.owner && metadata.owner !== user.id) {
+    return json(origin, { ok: false, error: "not your card" }, 403);
+  }
+  await env.CARDS.delete(`card:${id}`);
+  return json(origin, { ok: true });
 }
 
 /** POST /api/invoice — JSON { initData }. Returns { url } for WebApp.openInvoice.

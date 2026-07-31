@@ -62,7 +62,7 @@ const en: Dict = {
   secLeft: "s left",
   cameraDenied: "Camera access denied. You can skip and add video later.",
   share: "Share card",
-  shareText: "My video business card — tap to view",
+  shareText: "video business card · save my contact",
   saveContact: "Save contact",
   editCard: "Edit card",
   call: "Call",
@@ -105,6 +105,8 @@ const en: Dict = {
   emptyCards: "Cards you share will appear here",
   proForever: "Unlimited PRO — you are the owner",
   remove: "Remove",
+  createNewCard: "Create another card",
+  deleteCard: "Delete",
 };
 
 const ru: Dict = {
@@ -153,7 +155,7 @@ const ru: Dict = {
   secLeft: "с осталось",
   cameraDenied: "Нет доступа к камере. Можно пропустить и добавить видео позже.",
   share: "Поделиться",
-  shareText: "Моя видео-визитка — нажмите, чтобы посмотреть",
+  shareText: "видео-визитка · сохрани мои контакты",
   saveContact: "Сохранить контакт",
   editCard: "Редактировать",
   call: "Позвонить",
@@ -196,6 +198,8 @@ const ru: Dict = {
   emptyCards: "Визитки, которыми вы поделились, появятся здесь",
   proForever: "PRO без ограничений — вы владелец",
   remove: "Убрать",
+  createNewCard: "Создать ещё визитку",
+  deleteCard: "Удалить",
 };
 
 const be: Dict = {
@@ -244,7 +248,7 @@ const be: Dict = {
   secLeft: "с засталося",
   cameraDenied: "Няма доступу да камеры. Можна прапусціць і дадаць відэа пазней.",
   share: "Падзяліцца",
-  shareText: "Мая відэа-візітка — націсніце, каб паглядзець",
+  shareText: "відэа-візітка · захавай мае кантакты",
   saveContact: "Захаваць кантакт",
   editCard: "Рэдагаваць",
   call: "Патэлефанаваць",
@@ -287,6 +291,8 @@ const be: Dict = {
   emptyCards: "Візіткі, якімі вы падзяліліся, з'явяцца тут",
   proForever: "PRO без абмежаванняў — вы ўласнік",
   remove: "Прыбраць",
+  createNewCard: "Стварыць яшчэ візітку",
+  deleteCard: "Выдаліць",
 };
 
 const kk: Dict = {
@@ -335,7 +341,7 @@ const kk: Dict = {
   secLeft: "с қалды",
   cameraDenied: "Камераға рұқсат жоқ. Өткізіп жіберіп, бейнені кейін қосуға болады.",
   share: "Бөлісу",
-  shareText: "Менің бейне-визиткам — көру үшін басыңыз",
+  shareText: "бейне-визитка · байланысымды сақтап қал",
   saveContact: "Байланысты сақтау",
   editCard: "Өңдеу",
   call: "Қоңырау шалу",
@@ -378,6 +384,8 @@ const kk: Dict = {
   emptyCards: "Бөліскен визиткалар осы жерде болады",
   proForever: "PRO шексіз — сіз иесісіз",
   remove: "Алып тастау",
+  createNewCard: "Тағы визитка жасау",
+  deleteCard: "Жою",
 };
 
 const uz: Dict = {
@@ -426,7 +434,7 @@ const uz: Dict = {
   secLeft: "s qoldi",
   cameraDenied: "Kameraga ruxsat yo'q. O'tkazib yuborib, videoni keyin qo'shishingiz mumkin.",
   share: "Ulashish",
-  shareText: "Mening video-vizitkam — ko'rish uchun bosing",
+  shareText: "video-vizitka · kontaktni saqlab qol",
   saveContact: "Kontaktni saqlash",
   editCard: "Tahrirlash",
   call: "Qo'ng'iroq qilish",
@@ -469,6 +477,8 @@ const uz: Dict = {
   emptyCards: "Ulashilgan vizitkalar shu yerda bo'ladi",
   proForever: "PRO cheksiz — siz egasisiz",
   remove: "Olib tashlash",
+  createNewCard: "Yana vizitka yaratish",
+  deleteCard: "O'chirish",
 };
 
 const az: Dict = {
@@ -517,7 +527,7 @@ const az: Dict = {
   secLeft: "s qaldı",
   cameraDenied: "Kameraya giriş yoxdur. Keçib videonu sonra əlavə edə bilərsiniz.",
   share: "Paylaş",
-  shareText: "Mənim video-vizit kartım — baxmaq üçün klikləyin",
+  shareText: "video-vizit kart · kontaktımı saxla",
   saveContact: "Kontaktı saxla",
   editCard: "Redaktə et",
   call: "Zəng et",
@@ -560,6 +570,8 @@ const az: Dict = {
   emptyCards: "Paylaşılan kartlar burada görünəcək",
   proForever: "PRO limitsiz — siz sahibsiniz",
   remove: "Sil",
+  createNewCard: "Başqa kart yarat",
+  deleteCard: "Sil",
 };
 
 const hy: Dict = {
@@ -608,7 +620,7 @@ const hy: Dict = {
   secLeft: "վ մնաց",
   cameraDenied: "Տեսախցիկի մատչում չկա։ Կարող եք բաց թողնել և ավելացնել ավելի ուշ։",
   share: "Կիսվել",
-  shareText: "Իմ տեսա-այցեքարտը — սեղմեք դիտելու համար",
+  shareText: "տեսա-այցեքարտ · պահիր իմ կոնտակտը",
   saveContact: "Պահել կոնտակտը",
   editCard: "Խմբագրել",
   call: "Զանգահարել",
@@ -651,6 +663,8 @@ const hy: Dict = {
   emptyCards: "Կիսված այցեքարտերը կհայտնվեն այստեղ",
   proForever: "PRO անսահման — դուք տիրապետն եք",
   remove: "Հեռացնել",
+  createNewCard: "Ստեղծել ևս մեկ այցեքարտ",
+  deleteCard: "Ջնջել",
 };
 
 const ky: Dict = {
@@ -699,7 +713,7 @@ const ky: Dict = {
   secLeft: "с калды",
   cameraDenied: "Камерага уруксат жок. Өткөрүп жиберип, видеону кийин кошсоңуз болот.",
   share: "Бөлүшүү",
-  shareText: "Менин видео-визиткам — көрүү үчүн басыңыз",
+  shareText: "видео-визитка · байланышымды сактап кал",
   saveContact: "Байланышты сактоо",
   editCard: "Түзөтүү",
   call: "Чалуу",
@@ -742,6 +756,8 @@ const ky: Dict = {
   emptyCards: "Бөлүшүлгөн визиткалар ушул жерде болот",
   proForever: "PRO чексиз — сиз ээсисиз",
   remove: "Алып салуу",
+  createNewCard: "Дагы визитка түзүү",
+  deleteCard: "Өчүрүү",
 };
 
 const tgDict: Dict = {
@@ -790,7 +806,7 @@ const tgDict: Dict = {
   secLeft: "с монд",
   cameraDenied: "Дастрасӣ ба камера нест. Метавонед гузаред ва видеоро баъдтар илова кунед.",
   share: "Мубодила",
-  shareText: "Корти тиҷоратии видеоии ман — барои дидан клик кунед",
+  shareText: "корти видеоӣ · тамоси маро нигоҳ дор",
   saveContact: "Нигоҳ доштани тамос",
   editCard: "Таҳрир",
   call: "Занг задан",
@@ -833,6 +849,8 @@ const tgDict: Dict = {
   emptyCards: "Кортҳои мубодилашуда дар ин ҷо мебошанд",
   proForever: "PRO бе маҳдудият — шумо соҳиб ҳастед",
   remove: "Бар даштан",
+  createNewCard: "Корти дигар сохтан",
+  deleteCard: "Нест кардан",
 };
 
 const tk: Dict = {
@@ -881,7 +899,7 @@ const tk: Dict = {
   secLeft: "s galdy",
   cameraDenied: "Kameraya giriş ýok. Geçip, wideony soň goşup bilersiňiz.",
   share: "Paýlaş",
-  shareText: "Meniň wideo-wizitkam — görmek üçin basyň",
+  shareText: "wideo wizitka · kontagtymy sakla",
   saveContact: "Kontakty sakla",
   editCard: "Redaktirle",
   call: "Jaň et",
@@ -924,6 +942,8 @@ const tk: Dict = {
   emptyCards: "Paýlaşylan wizitkalar şu ýerde bolar",
   proForever: "PRO çäksiz — siz eýesisiniz",
   remove: "Aýyr",
+  createNewCard: "Ýene bir wizitka döret",
+  deleteCard: "Poz",
 };
 
 const ro: Dict = {
@@ -972,7 +992,7 @@ const ro: Dict = {
   secLeft: "s rămas",
   cameraDenied: "Accesul la cameră a fost refuzat. Poți omite și adăuga video mai târziu.",
   share: "Partajează",
-  shareText: "Cartea mea de vizită video — apasă pentru a vedea",
+  shareText: "carte de vizită video · salvează-mi contactul",
   saveContact: "Salvează contactul",
   editCard: "Editează",
   call: "Sună",
@@ -1015,6 +1035,8 @@ const ro: Dict = {
   emptyCards: "Cărțile partajate vor apărea aici",
   proForever: "PRO nelimitat — ești proprietarul",
   remove: "Elimină",
+  createNewCard: "Creează încă o carte",
+  deleteCard: "Șterge",
 };
 
 const dicts: Record<LangCode, Dict> = {

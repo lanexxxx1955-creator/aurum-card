@@ -8,6 +8,7 @@ compatibility_date = "2026-01-01"
 
 [vars]
 ALLOWED_ORIGIN = "https://lanexxxx1955-creator.github.io,http://localhost:3000,http://localhost:7100"
+APP_URL = "https://lanexxxx1955-creator.github.io/aurum-card/"
 
 [[kv_namespaces]]
 binding = "CARDS"

@@ -68,3 +68,22 @@ export async function fetchCard(id: string): Promise<Record<string, unknown> | n
     return null;
   }
 }
+
+/** Deletes a card from KV (owner-validated server-side) */
+export async function deleteCardRemote(initData: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/deleteCard`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initData, id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!data.ok) throw new BotApiError(data.error_code ?? res.status, data.error ?? "delete failed");
+}
+
+/**
+ * Share link for Telegram messages: points at the worker's OG page, so the
+ * message renders a rich preview (photo + name) and stays short/clean.
+ */
+export function cardShareLink(id: string): string {
+  return `${API_BASE}/c/${id}`;
+}

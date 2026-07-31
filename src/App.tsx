@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import type { LangCode, Profile, Step } from "@/lib/types";
 import { clearProfile, decodeCard, loadProfile, parseCardId, saveProfile } from "@/lib/share";
-import { fetchCard } from "@/lib/botapi";
-import { initTelegram, tgUserDefaults, tgUserId } from "@/lib/telegram";
-import { PRO_DAYS, OWNER_IDS } from "@/lib/config";
-import { clearCardsList, type CardSummary } from "@/lib/cards";
+import { fetchCard, cardShareLink, deleteCardRemote } from "@/lib/botapi";
+import { initTelegram, tgUserDefaults, tgUserId, shareViaTelegram, getInitData } from "@/lib/telegram";
+import { PRO_DAYS, OWNER_IDS, proxyConfigured } from "@/lib/config";
+import { clearCardsList, removeCardSummary, type CardSummary } from "@/lib/cards";
 import { deleteVideo } from "@/lib/idb";
+import { t } from "@/lib/i18n";
 import { LangStep } from "@/sections/LangStep";
 import { FormStep } from "@/sections/FormStep";
 import { PhotoStep } from "@/sections/PhotoStep";
@@ -82,6 +83,44 @@ export default function App() {
     setStep("card");
   };
 
+  /** Create another card (work / personal / project), keeping PRO + language */
+  const createNewCard = () => {
+    const tgDef = tgUserDefaults();
+    update({
+      name: tgDef.name ?? profile.name,
+      tg: tgDef.tg ?? profile.tg,
+      lang: profile.lang,
+      pro: profile.pro,
+      proUntil: profile.proUntil,
+    });
+    setStep("form");
+  };
+
+  /** Share a library card directly (link renders as rich OG preview) */
+  const shareLibraryCard = (s: CardSummary) => {
+    shareViaTelegram(cardShareLink(s.id), `✦ ${s.name} — ${t(profile.lang, "shareText")}`);
+  };
+
+  /** Edit a library card: load it into the profile, then run the wizard */
+  const editLibraryCard = async (s: CardSummary) => {
+    await selectCard(s);
+    setStep("form");
+  };
+
+  /** Delete a card from KV (owner-checked server-side) and from the library */
+  const deleteLibraryCard = async (s: CardSummary) => {
+    const initData = getInitData();
+    if (initData && proxyConfigured()) {
+      try {
+        await deleteCardRemote(initData, s.id);
+      } catch {
+        /* still remove locally */
+      }
+    }
+    removeCardSummary(s.id);
+    if (profile.cardId === s.id) update({ ...profile, cardId: undefined });
+  };
+
   const isOwner = OWNER_IDS.includes(tgUserId() ?? -1);
 
   // PRO expires after proUntil; the owner has unlimited PRO
@@ -147,6 +186,10 @@ export default function App() {
           onClose={() => setStep("card")}
           onSelect={selectCard}
           onUpgrade={() => setPaywall(true)}
+          onCreateNew={createNewCard}
+          onShareCard={shareLibraryCard}
+          onEditCard={editLibraryCard}
+          onDeleteCard={deleteLibraryCard}
         />
       )}
 

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 import { Screen, Brand, GoldButton, GhostButton } from "@/components/Lux";
-import { buildCardUrl, buildShortCardUrl, downloadVCard, drawQr } from "@/lib/share";
+import { buildCardUrl, downloadVCard, drawQr } from "@/lib/share";
 import { loadVideo } from "@/lib/idb";
-import { uploadGreetingVideo, telegramVideoUrl, saveCard, BotApiError } from "@/lib/botapi";
+import { uploadGreetingVideo, telegramVideoUrl, saveCard, cardShareLink, BotApiError } from "@/lib/botapi";
 import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
 import { upsertCardSummary } from "@/lib/cards";
 import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
@@ -45,7 +45,7 @@ export function CardView({
   const vidRef = useRef<HTMLVideoElement>(null);
   const uploadStarted = useRef(false);
 
-  const cardUrl = profile.cardId ? buildShortCardUrl(profile.cardId) : buildCardUrl(profile);
+  const cardUrl = profile.cardId ? cardShareLink(profile.cardId) : buildCardUrl(profile);
 
   /* Own card: play the local recording; fall back to the Telegram cloud copy
      when the local blob is gone (e.g. card picked from the library) */
@@ -139,14 +139,14 @@ export function CardView({
         const id = await saveCard(initData, { ...card, videoFileId }, profile.cardId);
         if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id, videoFileId });
         upsertCardSummary({ id, name: profile.name, company: profile.company, photo: profile.photo, createdAt: Date.now() });
-        url = buildShortCardUrl(id);
+        url = cardShareLink(id);
       } catch {
         /* fall back to the encoded hash link */
       }
     }
     setSharing(false);
     haptic("success");
-    shareViaTelegram(url, `${t(lang, "shareText")} — ${profile.name}`);
+    shareViaTelegram(url, `✦ ${profile.name} — ${t(lang, "shareText")}`);
   };
 
   const media = showVideo && videoUrl && !videoError ? (
@@ -338,6 +338,10 @@ export function CardView({
             )}
           </div>
         )}
+      </div>
+
+      <div className="pb-2 text-center text-[10px] uppercase tracking-[0.22em] text-[#8a7f5e]/60">
+        © ALIAXANDR LEMESHAU (LANEX)
       </div>
     </Screen>
   );
