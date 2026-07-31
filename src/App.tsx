@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { LangCode, Profile, Step } from "@/lib/types";
 import { clearProfile, decodeCard, loadProfile, parseCardId, saveProfile } from "@/lib/share";
 import { fetchCard, cardShareLink, deleteCardRemote } from "@/lib/botapi";
-import { initTelegram, tgUserDefaults, tgUserId, shareViaTelegram, getInitData } from "@/lib/telegram";
+import { initTelegram, tgUserDefaults, tgUserId, shareViaTelegram, getInitData, getTG } from "@/lib/telegram";
 import { PRO_DAYS, OWNER_IDS, proxyConfigured } from "@/lib/config";
 import { clearCardsList, removeCardSummary, type CardSummary } from "@/lib/cards";
 import { deleteVideo } from "@/lib/idb";
@@ -96,8 +96,13 @@ export default function App() {
     setStep("form");
   };
 
-  /** Share a library card directly (link renders as rich OG preview) */
+  /** Share a library card directly (inline photo message when possible) */
   const shareLibraryCard = (s: CardSummary) => {
+    const tg = getTG();
+    if (tg?.switchInlineQuery) {
+      tg.switchInlineQuery("", ["users", "groups", "channels"]);
+      return;
+    }
     shareViaTelegram(`${cardShareLink(s.id)}?v=${Date.now().toString(36)}`, `✦ ${s.name} — ${t(profile.lang, "shareText")}`);
   };
 

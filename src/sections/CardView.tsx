@@ -7,7 +7,7 @@ import { loadVideo } from "@/lib/idb";
 import { uploadGreetingVideo, telegramVideoUrl, saveCard, cardShareLink, fetchCard, BotApiError } from "@/lib/botapi";
 import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
 import { upsertCardSummary } from "@/lib/cards";
-import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
+import { haptic, openLink, shareViaTelegram, getInitData, getTG } from "@/lib/telegram";
 
 type CloudStatus = "idle" | "uploading" | "cloud" | "need-start" | "error";
 
@@ -116,6 +116,7 @@ export function CardView({
     setSharing(true);
     haptic("light");
     let url = cardUrl;
+    let savedId: string | null = null;
     const initData = getInitData();
     if (initData && proxyConfigured()) {
       try {
@@ -137,6 +138,7 @@ export function CardView({
         }
         const { pro: _p, proUntil: _u, cardId: _c, ...card } = profile;
         const id = await saveCard(initData, { ...card, videoFileId }, profile.cardId);
+        savedId = id;
         if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id, videoFileId });
         upsertCardSummary({ id, name: profile.name, company: profile.company, photo: profile.photo, createdAt: Date.now() });
 
@@ -156,6 +158,14 @@ export function CardView({
     }
     setSharing(false);
     haptic("success");
+
+    // Best format: native photo message via the bot's inline mode
+    // (big photo + caption + "Open card" button, no URL text at all)
+    const tg = getTG();
+    if (savedId && tg?.switchInlineQuery) {
+      tg.switchInlineQuery("", ["users", "groups", "channels"]);
+      return;
+    }
     shareViaTelegram(url, `✦ ${profile.name} — ${t(lang, "shareText")}`);
   };
 

@@ -37,6 +37,9 @@ export default {
       if (url.pathname === "/api/deleteCard" && request.method === "POST") {
         return await handleDeleteCard(request, env, origin);
       }
+      if (url.pathname === "/api/tg" && request.method === "POST") {
+        return await handleTelegramWebhook(request, env, origin);
+      }
       if (url.pathname === "/api/sendVideo" && request.method === "POST") {
         return await handleSendVideo(request, env, origin);
       }
@@ -301,6 +304,11 @@ async function handleOgPage(url, env, origin, request) {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="${workerBase}/api/cardPhoto?id=${id}" />` : "";
 
+  /* Crawlers get a pure OG page with no instant redirect; humans get the
+     meta-refresh + JS redirect into the Mini App */
+  const ua = request.headers.get("User-Agent") || "";
+  const isCrawler = /TelegramBot|Twitterbot|facebookexternalhit|WhatsApp|LinkedInBot|Slackbot/i.test(ua);
+
   const html = `<!doctype html>
 <html lang="ru">
   <head>
@@ -312,19 +320,21 @@ async function handleOgPage(url, env, origin, request) {
     <meta property="og:url" content="${workerBase}/c/${id}" />
     <meta property="og:site_name" content="AURUM CARD" />
     ${ogImage}
-    <meta http-equiv="refresh" content="0;url=${appUrl}" />
+    ${isCrawler ? "" : `<meta http-equiv="refresh" content="0;url=${appUrl}" />`}
     <style>
       body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0906;color:#d4af37;font-family:Georgia,serif}
       .ring{width:88px;height:88px;border-radius:50%;border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 0 40px -8px rgba(212,175,55,.45)}
       .t{text-align:center;letter-spacing:.28em;text-transform:uppercase;font-size:11px}
+      a{color:#f6e7b2}
     </style>
   </head>
   <body>
     <div>
       <div class="ring">✦</div>
       <div class="t">AURUM CARD</div>
+      ${isCrawler ? "" : `<div class="t" style="margin-top:14px"><a href="${appUrl}">Открыть визитку</a></div>`}
     </div>
-    <script>location.replace(${JSON.stringify(appUrl)});</script>
+    ${isCrawler ? "" : `<script>location.replace(${JSON.stringify(appUrl)});</script>`}
   </body>
 </html>`;
 
@@ -374,6 +384,93 @@ async function handleDeleteCard(request, env, origin) {
     return json(origin, { ok: false, error: "not your card" }, 403);
   }
   await env.CARDS.delete(`card:${id}`);
+  return json(origin, { ok: true });
+}
+
+/** POST /api/tg — Telegram webhook. Handles /start and inline queries.
+ *  Inline query → the user's own cards as native PHOTO messages (no URL text),
+ *  each with an "Open card" Mini App button. */
+async function handleTelegramWebhook(request, env, origin) {
+  // Verify the webhook secret when configured
+  if (env.TG_WEBHOOK_SECRET) {
+    const got = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
+    if (got !== env.TG_WEBHOOK_SECRET) return json(origin, { ok: false }, 401);
+  }
+
+  const update = await request.json().catch(() => null);
+  if (!update) return json(origin, { ok: true });
+
+  const appBase = (env.APP_URL || "https://lanexxxx1955-creator.github.io/aurum-card/").replace(/\/?$/, "/");
+  const workerBase = `https://${new URL(request.url).host}`;
+
+  // /start — welcome message with Mini App button
+  if (update.message && typeof update.message.text === "string" && update.message.text.startsWith("/start")) {
+    await tgApi(env, "sendMessage", {
+      chat_id: update.message.chat.id,
+      text: "✦ AURUM CARD — создайте роскошную видео-визитку и делитесь ею в один клик.\n\nЧтобы отправить визитку в любой чат, наберите @AURUM_CARD_BOT в поле сообщения.",
+      reply_markup: {
+        inline_keyboard: [[{ text: "✦ Открыть AURUM CARD", web_app: { url: appBase } }]],
+      },
+    });
+    return json(origin, { ok: true });
+  }
+
+  // Inline query — cards of THIS user only (owner check via KV metadata)
+  if (update.inline_query) {
+    const uid = update.inline_query.from.id;
+    const results = [];
+    try {
+      const list = await env.CARDS.list({ prefix: "card:" });
+      for (const k of list.keys) {
+        if (results.length >= 10) break;
+        if (!k.metadata || k.metadata.owner !== uid) continue;
+        const id = k.name.slice(5);
+        const raw = await env.CARDS.get(k.name, { cacheTtl: 30 });
+        if (!raw) continue;
+        let card;
+        try {
+          card = JSON.parse(raw);
+        } catch {
+          continue;
+        }
+        const caption = `✦ ${card.name} — видео-визитка · сохрани мои контакты`;
+        const keyboard = {
+          inline_keyboard: [[{ text: "✦ Открыть визитку", web_app: { url: `${appBase}#c=${id}` } }]],
+        };
+        const subtitle = [card.position, card.company].filter(Boolean).join(" · ");
+        if (card.photo && typeof card.photo === "string" && card.photo.startsWith("data:image/")) {
+          results.push({
+            type: "photo",
+            id,
+            photo_url: `${workerBase}/api/cardPhoto?id=${id}`,
+            thumbnail_url: `${workerBase}/api/cardPhoto?id=${id}`,
+            title: card.name,
+            description: subtitle || "видео-визитка",
+            caption,
+            reply_markup: keyboard,
+          });
+        } else {
+          results.push({
+            type: "article",
+            id,
+            title: card.name,
+            description: subtitle || "видео-визитка",
+            input_message_content: { message_text: `${caption}\n${workerBase}/c/${id}` },
+            reply_markup: keyboard,
+          });
+        }
+      }
+    } catch {
+      /* answer with what we have */
+    }
+    await tgApi(env, "answerInlineQuery", {
+      inline_query_id: update.inline_query.id,
+      results,
+      cache_time: 0,
+      is_personal: true,
+    });
+  }
+
   return json(origin, { ok: true });
 }
 

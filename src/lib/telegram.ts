@@ -10,6 +10,7 @@ export interface TelegramWebApp {
   openTelegramLink?: (url: string) => void;
   openLink?: (url: string) => void;
   openInvoice?: (url: string, cb?: (status: string) => void) => void;
+  switchInlineQuery?: (query: string, chooseChatTypes?: string[]) => void;
   showAlert?: (msg: string) => void;
   HapticFeedback?: { impactOccurred: (s: string) => void; notificationOccurred: (s: string) => void };
   initDataUnsafe?: { user?: { id: number; first_name?: string; username?: string; language_code?: string }; start_param?: string };
