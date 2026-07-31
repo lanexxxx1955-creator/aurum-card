@@ -268,7 +268,8 @@ async function handleOgPage(url, env, origin, request) {
   const workerBase = `https://${url.host}`;
 
   let card = null;
-  if (/^[A-Za-z0-9]{10}$/.test(id)) {
+  const validId = /^[A-Za-z0-9]{10}$/.test(id);
+  if (validId) {
     const raw = await env.CARDS.get(`card:${id}`, { cacheTtl: 30 });
     if (raw) {
       try {
@@ -279,6 +280,15 @@ async function handleOgPage(url, env, origin, request) {
     }
   }
 
+  /* Card not visible at this edge yet (KV propagation): tell crawlers to come
+     back instead of letting Telegram cache a poor no-image preview */
+  if (validId && !card) {
+    return new Response("card is still propagating, retry soon", {
+      status: 503,
+      headers: { "Content-Type": "text/plain", "Retry-After": "20", "Cache-Control": "no-store" },
+    });
+  }
+
   const name = card && card.name ? escapeHtml(card.name) : "AURUM CARD";
   const desc = card
     ? escapeHtml(`Видео-визитка · сохрани мои контакты — AURUM CARD`)
@@ -286,7 +296,10 @@ async function handleOgPage(url, env, origin, request) {
   const hasPhoto = Boolean(card && typeof card.photo === "string" && card.photo.startsWith("data:image/"));
   const ogImage = hasPhoto ? `<meta property="og:image" content="${workerBase}/api/cardPhoto?id=${id}" />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta name="twitter:card" content="summary_large_image" />` : "";
+    <meta property="og:image:width" content="320" />
+    <meta property="og:image:height" content="320" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="${workerBase}/api/cardPhoto?id=${id}" />` : "";
 
   const html = `<!doctype html>
 <html lang="ru">

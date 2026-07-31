@@ -4,7 +4,7 @@ import type { Profile } from "@/lib/types";
 import { Screen, Brand, GoldButton, GhostButton } from "@/components/Lux";
 import { buildCardUrl, downloadVCard, drawQr } from "@/lib/share";
 import { loadVideo } from "@/lib/idb";
-import { uploadGreetingVideo, telegramVideoUrl, saveCard, cardShareLink, BotApiError } from "@/lib/botapi";
+import { uploadGreetingVideo, telegramVideoUrl, saveCard, cardShareLink, fetchCard, BotApiError } from "@/lib/botapi";
 import { BOT_USERNAME, proxyConfigured } from "@/lib/config";
 import { upsertCardSummary } from "@/lib/cards";
 import { haptic, openLink, shareViaTelegram, getInitData } from "@/lib/telegram";
@@ -139,7 +139,17 @@ export function CardView({
         const id = await saveCard(initData, { ...card, videoFileId }, profile.cardId);
         if (id !== profile.cardId) onProfileChange?.({ ...profile, cardId: id, videoFileId });
         upsertCardSummary({ id, name: profile.name, company: profile.company, photo: profile.photo, createdAt: Date.now() });
-        url = cardShareLink(id);
+
+        // Wait until the card is readable (KV propagation), otherwise
+        // Telegram's crawler may cache an empty preview. Then add a version
+        // marker so every share gets a fresh preview fetch.
+        const deadline = Date.now() + 25_000;
+        while (Date.now() < deadline) {
+          const ready = await fetchCard(id).catch(() => null);
+          if (ready) break;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        url = `${cardShareLink(id)}?v=${Date.now().toString(36)}`;
       } catch {
         /* fall back to the encoded hash link */
       }

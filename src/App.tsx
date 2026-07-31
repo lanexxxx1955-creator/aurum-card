@@ -98,7 +98,7 @@ export default function App() {
 
   /** Share a library card directly (link renders as rich OG preview) */
   const shareLibraryCard = (s: CardSummary) => {
-    shareViaTelegram(cardShareLink(s.id), `✦ ${s.name} — ${t(profile.lang, "shareText")}`);
+    shareViaTelegram(`${cardShareLink(s.id)}?v=${Date.now().toString(36)}`, `✦ ${s.name} — ${t(profile.lang, "shareText")}`);
   };
 
   /** Edit a library card: load it into the profile, then run the wizard */
